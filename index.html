@@ -349,7 +349,11 @@ body {
   padding: 6px;
   pointer-events: auto;
   box-shadow: 0 8px 40px rgba(0,0,0,.5);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.nav-inner::-webkit-scrollbar { display: none; }
 .nav-item {
   display: flex;
   align-items: center;
@@ -444,10 +448,13 @@ body {
 /* ── 页脚 ── */
 .footer {
   text-align: center;
-  font-size: 12px;
-  color: rgba(255,255,255,.15);
+  font-size: 13px;
+  color: rgba(255,255,255,.55);
   margin-top: 48px;
-  letter-spacing: .5px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.7;
 }
 
 /* ── 响应式 ── */
@@ -459,8 +466,10 @@ body {
   .nav-item .nav-icon { font-size: 14px; }
 }
 @media (max-width: 460px) {
-  .nav-item span { display: none; }
-  .nav-item { padding: 10px 14px; }
+  .nav { padding: 6px 8px 12px; }
+  .nav-inner { flex: 1; max-width: 100%; justify-content: space-around; }
+  .nav-item { padding: 8px 6px; font-size: 11px; flex: 1; justify-content: center; }
+  .nav-item .nav-icon { font-size: 13px; }
 }
 </style>
 </head>
@@ -480,7 +489,7 @@ body {
 
   <div class="grid" id="cardGrid"></div>
 
-  <div class="footer">NEFERT · 2026</div>
+  <div class="footer">其实我只是五一的时候跟ta吐槽了一下这件事，ta就帮我把宇新的都逆向出来了，还告诉我要是我还不爽以后宇新出一个ta就逆向一个，得知我考差后也是ta鼓励我，并让我用这种办法尝试把郁结之情发泄出去，真的特别特别特别感谢ta</div>
 </div>
 
 <!-- 导航栏 -->
