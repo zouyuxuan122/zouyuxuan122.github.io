@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEFERT · 密码激活</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Noto+Sans+SC:wght@300;400;600;700&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', 'Noto Sans SC', sans-serif;
+  min-height: 100vh;
+  background: #0a0a0f;
+  color: #fff;
+  overflow-x: hidden;
+  padding-bottom: 80px;
+}
+
+/* ── 背景粒子 ── */
+#particles {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,.08) 0%, transparent 70%);
+  animation: float linear infinite;
+}
+@keyframes float {
+  0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+  10%  { opacity: .6; }
+  90%  { opacity: .6; }
+  100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+}
+
+/* ── 主容器 ── */
+.app {
+  position: relative;
+  z-index: 1;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 60px 24px 80px;
+}
+
+/* ── 标题 ── */
+.hero {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.hero-title {
+  font-size: clamp(48px, 12vw, 96px);
+  font-weight: 900;
+  letter-spacing: .18em;
+  line-height: 1.1;
+  background: linear-gradient(135deg, #ff6b00, #ffd700, #ff4500, #ffd700, #ff6b00);
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradShift 4s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 80px rgba(255,107,0,.35));
+}
+@keyframes gradShift {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+.hero-sub {
+  margin-top: 20px;
+  font-size: clamp(13px, 2.2vw, 17px);
+  font-weight: 300;
+  line-height: 1.8;
+  background: linear-gradient(135deg, #ffffff, #888888, #ffffff, #aaaaaa);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradShift 5s ease-in-out infinite alternate;
+  max-width: 640px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ── 卡片网格 ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+/* ── 毛玻璃卡片 ── */
+.card {
+  position: relative;
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 20px;
+  padding: 28px 22px 24px;
+  cursor: pointer;
+  transition: transform .35s cubic-bezier(.25,.46,.45,.94),
+              box-shadow .4s ease,
+              background .3s ease;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: radial-gradient(600px circle at var(--mx,50%) var(--my,50%), rgba(255,255,255,.06) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity .4s;
+  pointer-events: none;
+}
+.card:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 20px 60px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.12);
+}
+.card:hover::before { opacity: 1; }
+
+.card-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+  display: block;
+}
+.card-name {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.card-pkg {
+  font-size: 12px;
+  color: rgba(255,255,255,.35);
+  font-family: 'Inter', monospace;
+  margin-bottom: 12px;
+}
+.card-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tag {
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255,255,255,.07);
+  color: rgba(255,255,255,.6);
+  border: 1px solid rgba(255,255,255,.06);
+}
+
+/* ── 详情面板 ── */
+.detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .45s ease;
+}
+.detail-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.detail-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.detail-panel {
+  position: relative;
+  width: 92%;
+  max-width: 460px;
+  backdrop-filter: blur(32px) saturate(1.6);
+  -webkit-backdrop-filter: blur(32px) saturate(1.6);
+  background: rgba(20,20,28,.85);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 28px;
+  padding: 36px 28px 32px;
+  transform: scale(.92) translateY(20px);
+  transition: transform .45s cubic-bezier(.25,.46,.45,.94);
+}
+.detail-overlay.open .detail-panel {
+  transform: scale(1) translateY(0);
+}
+.detail-close {
+  position: absolute;
+  top: 14px; right: 18px;
+  background: none; border: none;
+  color: rgba(255,255,255,.4);
+  font-size: 24px;
+  cursor: pointer;
+  transition: color .2s;
+}
+.detail-close:hover { color: #fff; }
+
+.detail-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.detail-pkg {
+  font-size: 13px;
+  color: rgba(255,255,255,.35);
+  font-family: 'Inter', monospace;
+  margin-bottom: 20px;
+}
+
+/* ── 输入区 ── */
+.input-group {
+  margin-bottom: 16px;
+}
+.input-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,.5);
+  margin-bottom: 6px;
+}
+.input-group input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.05);
+  color: #fff;
+  font-size: 18px;
+  font-family: 'Inter', monospace;
+  letter-spacing: 2px;
+  outline: none;
+  transition: border-color .25s, box-shadow .25s;
+}
+.input-group input:focus {
+  border-color: rgba(255,255,255,.25);
+  box-shadow: 0 0 0 3px rgba(255,255,255,.06);
+}
+.input-group input::placeholder {
+  color: rgba(255,255,255,.15);
+  letter-spacing: 1px;
+}
+
+/* ── 结果区域 ── */
+.result-area {
+  margin-top: 20px;
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.06);
+  text-align: center;
+  transition: opacity .3s;
+}
+.result-area.hidden { opacity: 0; }
+.result-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,.3);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+}
+.result-code {
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: 6px;
+  background: linear-gradient(135deg, #f7971e, #ffd200);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-family: 'Inter', monospace;
+}
+.result-hint {
+  font-size: 12px;
+  color: rgba(255,255,255,.25);
+  margin-top: 4px;
+}
+
+.btn-calc {
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(135deg, #f7971e, #e65c00);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform .2s, box-shadow .25s;
+}
+.btn-calc:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 30px rgba(247,151,30,.35);
+}
+.btn-calc:active { transform: scale(.98); }
+
+/* ── 结果详情 ── */
+.result-detail {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  padding: 12px 0 6px;
+  flex-wrap: wrap;
+}
+.result-detail .rd-item {
+  text-align: center;
+}
+.result-detail .rd-label {
+  font-size: 11px;
+  color: rgba(255,255,255,.25);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+.result-detail .rd-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255,255,255,.7);
+  font-family: 'Inter', monospace;
+  letter-spacing: 2px;
+}
+
+/* ── 导航栏 ── */
+.nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  padding: 10px 16px 16px;
+  pointer-events: none;
+}
+.nav-inner {
+  display: flex;
+  gap: 6px;
+  backdrop-filter: blur(28px) saturate(1.6);
+  -webkit-backdrop-filter: blur(28px) saturate(1.6);
+  background: rgba(15,15,22,.82);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 18px;
+  padding: 6px;
+  pointer-events: auto;
+  box-shadow: 0 8px 40px rgba(0,0,0,.5);
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,.5);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .25s, color .25s, transform .2s;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.nav-item:hover {
+  background: rgba(255,255,255,.07);
+  color: #fff;
+  transform: translateY(-1px);
+}
+.nav-item:active { transform: scale(.96); }
+.nav-item .nav-icon { font-size: 16px; }
+
+/* ── 罪证画廊 ── */
+.gallery-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .45s ease;
+}
+.gallery-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.gallery-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.gallery-panel {
+  position: relative;
+  width: 92%;
+  max-width: 520px;
+  max-height: 88vh;
+  overflow-y: auto;
+  backdrop-filter: blur(32px) saturate(1.6);
+  -webkit-backdrop-filter: blur(32px) saturate(1.6);
+  background: rgba(20,20,28,.88);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 28px;
+  padding: 32px 24px 24px;
+  transform: scale(.92) translateY(20px);
+  transition: transform .45s cubic-bezier(.25,.46,.45,.94);
+}
+.gallery-overlay.open .gallery-panel {
+  transform: scale(1) translateY(0);
+}
+.gallery-close {
+  position: absolute;
+  top: 12px; right: 16px;
+  background: none; border: none;
+  color: rgba(255,255,255,.4);
+  font-size: 26px;
+  cursor: pointer;
+  transition: color .2s;
+  z-index: 2;
+}
+.gallery-close:hover { color: #fff; }
+.gallery-title {
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 20px;
+}
+.gallery-img {
+  width: 100%;
+  border-radius: 14px;
+  margin-bottom: 14px;
+  display: block;
+  border: 1px solid rgba(255,255,255,.06);
+}
+
+/* ── 页脚 ── */
+.footer {
+  text-align: center;
+  font-size: 12px;
+  color: rgba(255,255,255,.15);
+  margin-top: 48px;
+  letter-spacing: .5px;
+}
+
+/* ── 响应式 ── */
+@media (max-width: 520px) {
+  .app { padding: 32px 16px 50px; }
+  .detail-panel { padding: 26px 18px 24px; }
+  .result-code { font-size: 30px; letter-spacing: 4px; }
+  .nav-item { padding: 8px 10px; font-size: 12px; }
+  .nav-item .nav-icon { font-size: 14px; }
+}
+@media (max-width: 460px) {
+  .nav-item span { display: none; }
+  .nav-item { padding: 10px 14px; }
+}
+</style>
+</head>
+<body>
+
+<!-- 粒子 -->
+<div id="particles"></div>
+
+<!-- 主应用 -->
+<div class="app" id="app">
+  <div class="hero">
+    <div class="hero-title">NEFERT</div>
+    <div class="hero-sub">
+      由于宇新这个special people实在是太没🪵+我二模考差，满腔的怒火无处释放，所以在认真复习努力备考之余我略施小计，把宇新这些项目的密码算法全部逆向了出来
+    </div>
+  </div>
+
+  <div class="grid" id="cardGrid"></div>
+
+  <div class="footer">NEFERT · 2026</div>
+</div>
+
+<!-- 导航栏 -->
+<div class="nav">
+  <div class="nav-inner">
+    <button class="nav-item" id="navEvidence">
+      <span class="nav-icon">📋</span><span>宇新罪证一览</span>
+    </button>
+    <a class="nav-item" href="https://www.ifdian.net/a/5201314zip" target="_blank" rel="noopener">
+      <span class="nav-icon">⚡</span><span>爱发电</span>
+    </a>
+    <a class="nav-item" href="https://github.com/zouyuxuan122?tab=repositories" target="_blank" rel="noopener">
+      <span class="nav-icon">🐙</span><span>GitHub</span>
+    </a>
+    <a class="nav-item" href="https://www.bandbbs.cn/resources/6031/" target="_blank" rel="noopener">
+      <span class="nav-icon">⌚</span><span>米坛</span>
+    </a>
+  </div>
+</div>
+
+<!-- 详情弹窗 -->
+<div class="detail-overlay" id="detailOverlay">
+  <div class="detail-backdrop" id="detailBackdrop"></div>
+  <div class="detail-panel" id="detailPanel">
+    <button class="detail-close" id="detailClose">&times;</button>
+    <div class="detail-title" id="detailTitle"></div>
+    <div class="detail-pkg" id="detailPkg"></div>
+
+    <div class="input-group">
+      <label>唯一码</label>
+      <input type="text" id="codeInput" placeholder="输入手表显示的唯一码" autocomplete="off" spellcheck="false">
+    </div>
+
+    <button class="btn-calc" id="calcBtn">计算密码</button>
+
+    <div class="result-area hidden" id="resultArea">
+      <div class="result-detail">
+        <div class="rd-item">
+          <div class="rd-label">唯一码</div>
+          <div class="rd-value" id="rdCode">—</div>
+        </div>
+        <div class="rd-item">
+          <div class="rd-label">激活密码</div>
+          <div class="rd-value" id="rdPin" style="font-size:20px;font-weight:700;background:linear-gradient(135deg,#f7971e,#ffd200);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 罪证画廊 -->
+<div class="gallery-overlay" id="galleryOverlay">
+  <div class="gallery-backdrop" id="galleryBackdrop"></div>
+  <div class="gallery-panel">
+    <button class="gallery-close" id="galleryClose">&times;</button>
+    <div class="gallery-title">📋 宇新罪证一览</div>
+    <img class="gallery-img" src="罪证1.png" alt="罪证1" loading="lazy">
+    <img class="gallery-img" src="罪证2.png" alt="罪证2" loading="lazy">
+    <img class="gallery-img" src="罪证3.png" alt="罪证3" loading="lazy">
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  算法
+// ══════════════════════════════════════════
+
+// ── 云学宝典 (plain JS, use *) ──
+function cloud_hash8(s) {
+  let h1 = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) {
+    h1 ^= s.charCodeAt(i);
+    h1 = (h1 + ((h1 << 1) + (h1 << 4) + (h1 << 7) + (h1 << 8) + (h1 << 24))) >>> 0;
+  }
+  let h2 = 0x1000193;
+  for (let i = s.length - 1; i >= 0; i--) {
+    h2 ^= 31 * s.charCodeAt(i);
+    h2 = (0x1000193 * h2) >>> 0;
+  }
+  const c = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let r = "", x = (h1 ^ h2) >>> 0;
+  for (let i = 0; i < 8; i++) { r += c[x % 36]; x = (x / 36) >>> 0; }
+  return r;
+}
+function cloud_pin(code) {
+  let s = "YxStu@2026!" + code, e = 0x9e3779b9, i = 0x85ebca6b;
+  for (let o = 0; o < s.length; o++) {
+    let ch = s.charCodeAt(o);
+    e = ((e ^ ch) * 0x1000193) >>> 0;
+    i = ((i + ch) * 0x27d4eb2d) >>> 0;
+  }
+  let p = String(((e ^ i) >>> 0) % 1e6);
+  while (p.length < 6) p = "0" + p;
+  return p;
+}
+
+// ── 验算 (bytecode, Math.imul) ──
+function calc_hash5(s) {
+  let h1 = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) { h1 ^= s.charCodeAt(i); h1 = Math.imul(h1, 0x1000193) >>> 0; }
+  let h2 = 0x1000193;
+  for (let i = s.length - 1; i >= 0; i--) { h2 ^= Math.imul(s.charCodeAt(i), 31) >>> 0; h2 = Math.imul(h2, 0x1000193) >>> 0; }
+  const c = "123456789ABCDEFGHIJKLMNPQRSTUVWXYZ";
+  let r = "", x = (h1 ^ h2) >>> 0;
+  for (let i = 0; i < 5; i++) { r += c[x % 33]; x = (x / 33) >>> 0; }
+  return r;
+}
+function calc_pin(code) {
+  let s = "FreeDict@2026!RC" + code, e = 0x9e3779b9, i = 0x85ebca6b;
+  for (let o = 0; o < s.length; o++) { let ch = s.charCodeAt(o); e = Math.imul(e ^ ch, 0x1000193) >>> 0; i = Math.imul(i + ch, 0x27d4eb2d) >>> 0; }
+  let p = String(((e ^ i) >>> 0) % 1e6);
+  while (p.length < 6) p = "0" + p;
+  return p;
+}
+
+// ── 咕咕钟 (bytecode, Math.imul) ──
+function gugu_hash7(s) {
+  let h1 = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) { h1 ^= s.charCodeAt(i); h1 = Math.imul(h1, 0x1000193) >>> 0; }
+  let h2 = 0x1000193;
+  for (let i = s.length - 1; i >= 0; i--) { h2 ^= Math.imul(s.charCodeAt(i), 31) >>> 0; h2 = Math.imul(h2, 0x1000193) >>> 0; }
+  const c = "@23456789ABCDEFGHJKLMNOPRSTUVWXYZ";
+  let r = "", x = (h1 ^ h2) >>> 0;
+  for (let i = 0; i < 7; i++) { r += c[x % 33]; x = (x / 33) >>> 0; }
+  return r;
+}
+function gugu_pin(code) {
+  let s = "GuguClock@2026!GG" + code, e = 0x9e3779b9, i = 0x85ebca6b;
+  for (let o = 0; o < s.length; o++) { let ch = s.charCodeAt(o); e = Math.imul(e ^ ch, 0x1000193) >>> 0; i = Math.imul(i + ch, 0x27d4eb2d) >>> 0; }
+  let p = String(((e ^ i) >>> 0) % 1e6);
+  while (p.length < 6) p = "0" + p;
+  return p;
+}
+
+// ── 投矛大作战 (bytecode, Math.imul) ──
+function mao_hash4(s) {
+  let h1 = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) { h1 ^= s.charCodeAt(i); h1 = Math.imul(h1, 0x1000193) >>> 0; }
+  let h2 = 0x1000193;
+  for (let i = s.length - 1; i >= 0; i--) { h2 ^= Math.imul(s.charCodeAt(i), 31) >>> 0; h2 = Math.imul(h2, 0x1000193) >>> 0; }
+  const c = "D123456789ABCDEFGHIJKLMNPQRSTUVWXYZ";
+  let r = "", x = (h1 ^ h2) >>> 0;
+  for (let i = 0; i < 4; i++) { r += c[x % 33]; x = (x / 33) >>> 0; }
+  return r;
+}
+function mao_pin(code) {
+  let s = "FreeDict@2026!RC" + code, e = 0x9e3779b9, i = 0x85ebca6b;
+  for (let o = 0; o < s.length; o++) { let ch = s.charCodeAt(o); e = Math.imul(e ^ ch, 0x1000193) >>> 0; i = Math.imul(i + ch, 0x27d4eb2d) >>> 0; }
+  let p = String(((e ^ i) >>> 0) % 1e6);
+  while (p.length < 6) p = "0" + p;
+  return p;
+}
+
+// ══════════════════════════════════════════
+//  项目数据
+// ══════════════════════════════════════════
+const projects = [
+  {
+    id: 'cloud', icon: '📘', name: '云学宝典', pkg: 'com.yxstu.xue',
+    hashDesc: 'hash8 → 8位', salt: 'YxStu@2026!', imul: false,
+    hash: cloud_hash8, pin: cloud_pin
+  },
+  {
+    id: 'calc', icon: '🧮', name: '验算', pkg: 'com.yxstu.xuecalc',
+    hashDesc: 'hash5 → 5位', salt: 'FreeDict@2026!RC', imul: true,
+    hash: calc_hash5, pin: calc_pin
+  },
+  {
+    id: 'gugu', icon: '🕰️', name: '咕咕钟', pkg: 'com.yxstu.rw5',
+    hashDesc: 'hash7 → 7位', salt: 'GuguClock@2026!GG', imul: true,
+    hash: gugu_hash7, pin: gugu_pin
+  },
+  {
+    id: 'mao', icon: '🔱', name: '投矛大作战', pkg: 'com.yxstu.mao',
+    hashDesc: 'hash4 → 4位', salt: 'FreeDict@2026!RC', imul: true,
+    hash: mao_hash4, pin: mao_pin
+  }
+];
+
+// ══════════════════════════════════════════
+//  DOM
+// ══════════════════════════════════════════
+const grid = document.getElementById('cardGrid');
+const overlay = document.getElementById('detailOverlay');
+const backdrop = document.getElementById('detailBackdrop');
+const closeBtn = document.getElementById('detailClose');
+const panel = document.getElementById('detailPanel');
+const title = document.getElementById('detailTitle');
+const pkg = document.getElementById('detailPkg');
+const input = document.getElementById('codeInput');
+const calcBtn = document.getElementById('calcBtn');
+const resultArea = document.getElementById('resultArea');
+const rdCode = document.getElementById('rdCode');
+const rdPin = document.getElementById('rdPin');
+
+let activeProj = null;
+
+// 渲染卡片
+projects.forEach(p => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <span class="card-icon">${p.icon}</span>
+    <div class="card-name">${p.name}</div>
+    <div class="card-pkg">${p.pkg}</div>
+    <div class="card-meta">
+      <span class="tag">${p.hashDesc}</span>
+      <span class="tag">${p.imul ? 'Math.imul' : 'float×'}</span>
+    </div>
+  `;
+  card.addEventListener('click', () => openDetail(p));
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+    card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+  });
+  grid.appendChild(card);
+});
+
+// 打开详情
+function openDetail(p) {
+  activeProj = p;
+  title.textContent = p.icon + ' ' + p.name;
+  pkg.textContent = p.pkg + ' · ' + p.hashDesc;
+  input.value = '';
+  resultArea.classList.add('hidden');
+  overlay.classList.add('open');
+  setTimeout(() => input.focus(), 350);
+}
+
+function closeDetail() {
+  overlay.classList.remove('open');
+}
+
+backdrop.addEventListener('click', closeDetail);
+closeBtn.addEventListener('click', closeDetail);
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeDetail();
+});
+
+// 计算
+calcBtn.addEventListener('click', () => {
+  if (!activeProj) return;
+  const raw = input.value.trim();
+  if (!raw) { input.focus(); return; }
+
+  const proj = activeProj;
+  const charset = proj.id === 'cloud' ? '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+               : proj.id === 'calc' ? '123456789ABCDEFGHIJKLMNPQRSTUVWXYZ'
+               : proj.id === 'gugu' ? '@23456789ABCDEFGHJKLMNOPRSTUVWXYZ'
+               : 'D123456789ABCDEFGHIJKLMNPQRSTUVWXYZ';
+
+  const looksLikeCode = [...raw].every(ch => charset.includes(ch));
+
+  let finalCode, password;
+  if (looksLikeCode && raw.length >= 4) {
+    finalCode = raw;
+    password = proj.pin(raw);
+  } else {
+    finalCode = proj.hash(raw);
+    password = proj.pin(finalCode);
+  }
+
+  rdCode.textContent = finalCode;
+  rdPin.textContent = password;
+  resultArea.classList.remove('hidden');
+});
+
+// 回车触发计算
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter') calcBtn.click();
+});
+
+// ══════════════════════════════════════════
+//  罪证画廊
+// ══════════════════════════════════════════
+const galOverlay = document.getElementById('galleryOverlay');
+const galBackdrop = document.getElementById('galleryBackdrop');
+const galClose = document.getElementById('galleryClose');
+const navEvidence = document.getElementById('navEvidence');
+
+navEvidence.addEventListener('click', () => {
+  galOverlay.classList.add('open');
+});
+galBackdrop.addEventListener('click', () => {
+  galOverlay.classList.remove('open');
+});
+galClose.addEventListener('click', () => {
+  galOverlay.classList.remove('open');
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    galOverlay.classList.remove('open');
+    closeDetail();
+  }
+});
+
+// ══════════════════════════════════════════
+//  粒子背景
+// ══════════════════════════════════════════
+(function initParticles() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 35; i++) {
+    const el = document.createElement('div');
+    el.className = 'particle';
+    const size = 2 + Math.random() * 4;
+    el.style.width = size + 'px';
+    el.style.height = size + 'px';
+    el.style.left = Math.random() * 100 + '%';
+    el.style.animationDuration = (12 + Math.random() * 28) + 's';
+    el.style.animationDelay = (Math.random() * 20) + 's';
+    container.appendChild(el);
+  }
+})();
+</script>
+</body>
+</html>
