@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SeatMaster Pro — Seating, Reimagined</title>
+
+  <!-- Tailwind (utility classes) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Vue 3 (production) -->
+  <script src="https://unpkg.com/vue@3.4.27/dist/vue.global.prod.js"></script>
+
+  <!-- GSAP (animations) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <!-- html2canvas (图片导出) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/glass.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/classroom.css" />
+
+  <style>
+    /* 全局布局 */
+    #app {
+      position: relative;
+      z-index: 1;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* 顶部导航 */
+    .top-nav {
+      flex-shrink: 0;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 8px;
+      position: relative;
+      z-index: 100;
+      border-radius: 0 0 18px 18px;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text-1);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .nav-brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 4px 16px var(--primary-glow);
+    }
+
+    .nav-slogan {
+      font-size: 11px;
+      color: var(--text-3);
+      letter-spacing: 0.25em;
+      margin-left: 4px;
+      font-weight: 500;
+    }
+
+    .nav-spacer { flex: 1; }
+
+    .nav-items {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .nav-item {
+      position: relative;
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: transparent;
+      border: 1px solid transparent;
+    }
+
+    .nav-item:hover {
+      background: var(--glass-bg);
+      color: var(--text-1);
+    }
+
+    .nav-item.active {
+      background: var(--glass-bg-strong);
+      color: var(--primary);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .nav-item.active::after {
+      content: "";
+      position: absolute;
+      bottom: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 2px;
+      background: var(--primary);
+      border-radius: 2px;
+      box-shadow: 0 0 8px var(--primary);
+    }
+
+    /* 关于按钮 — 更醒目的样式 */
+    .nav-item-about {
+      background: linear-gradient(135deg, var(--primary-glow) 0%, var(--accent-glow) 100%);
+      border: 1px solid var(--primary);
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      position: relative;
+    }
+
+    .nav-item-about::before {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .nav-divider {
+      width: 1px;
+      height: 24px;
+      background: var(--glass-border);
+      margin: 0 8px;
+    }
+
+    /* 主体内容 */
+    .main-view {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 24px;
+    }
+
+    .view-section {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* === 名单管理 === */
+    .roster-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+
+    .student-card {
+      padding: 14px;
+      border-radius: 14px;
+      transition: all 0.25s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .student-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .student-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+      margin-bottom: 8px;
+    }
+
+    .student-avatar.male { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+    .student-avatar.female { background: linear-gradient(135deg, #f472b6, #ec4899); }
+    .student-avatar.unknown { background: linear-gradient(135deg, #a78bfa, #8b5cf6); }
+
+    /* === 点名器控制面板 === */
+    .picker-panel {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .mode-btn {
+      padding: 16px 12px;
+      border-radius: 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      border: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+    }
+
+    .mode-btn:hover {
+      transform: translateY(-2px);
+      border-color: var(--primary);
+    }
+
+    .mode-btn.active {
+      background: linear-gradient(135deg, var(--primary-glow), var(--accent-glow));
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    /* === 老虎机 === */
+    .slot-machine {
+      position: fixed;
+      inset: 0;
+      z-index: 8000;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(40px) saturate(180%);
+      -webkit-backdrop-filter: blur(40px) saturate(180%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .slot-frame {
+      width: 540px;
+      max-width: 92vw;
+      padding: 48px 36px;
+      text-align: center;
+    }
+
+    .slot-display {
+      font-size: 64px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 50%, var(--warn) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      min-height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 24px 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .slot-display.spinning {
+      filter: blur(2px);
+      animation: shake 0.05s linear infinite;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-2px); }
+    }
+
+    .slot-result {
+      animation: popResult 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popResult {
+      0% { transform: scale(0.3); opacity: 0; }
+      60% { transform: scale(1.15); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* === 大卡片结果展示 === */
+    .big-result-card {
+      position: relative;
+      padding: 60px 48px;
+      text-align: center;
+      background: var(--glass-bg-strong);
+      backdrop-filter: blur(60px) saturate(200%);
+      -webkit-backdrop-filter: blur(60px) saturate(200%);
+      border: 1px solid var(--glass-border);
+      border-radius: 28px;
+      box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+        0 0 120px var(--primary-glow);
+      max-width: 600px;
+      width: 92vw;
+      animation: heroEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .big-result-card::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      border-radius: inherit;
+      background: linear-gradient(135deg,
+        var(--primary) 0%,
+        var(--accent) 35%,
+        var(--warn) 70%,
+        var(--danger) 100%);
+      z-index: -1;
+      opacity: 0.6;
+      filter: blur(20px);
+    }
+
+    @keyframes heroEnter {
+      0% {
+        transform: scale(0.4) rotate(-5deg);
+        opacity: 0;
+        filter: blur(20px);
+      }
+      50% {
+        transform: scale(1.05) rotate(1deg);
+        opacity: 1;
+        filter: blur(0);
+      }
+      100% {
+        transform: scale(1) rotate(0);
+        opacity: 1;
+        filter: blur(0);
+      }
+    }
+
+    .big-result-label {
+      font-size: 12px;
+      letter-spacing: 0.4em;
+      color: var(--text-3);
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .big-result-name {
+      font-size: 96px;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      line-height: 1.1;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 50%, var(--warn) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: 0 0 80px var(--primary-glow);
+      animation: nameGlow 2s ease-in-out infinite;
+      margin: 16px 0 32px;
+    }
+
+    @keyframes nameGlow {
+      0%, 100% { filter: drop-shadow(0 0 20px var(--primary-glow)); }
+      50% { filter: drop-shadow(0 0 40px var(--accent-glow)); }
+    }
+
+    .big-result-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 32px;
+    }
+
+    .big-result-tag {
+      display: inline-block;
+      padding: 6px 14px;
+      background: var(--primary-glow);
+      color: var(--primary);
+      border-radius: 20px;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .big-result-multiname {
+      font-size: 36px;
+      font-weight: 800;
+      margin: 8px 0;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* === 模态框 === */
+    .about-modal {
+      max-width: 540px;
+      width: 90vw;
+      padding: 40px 32px;
+      text-align: center;
+    }
+
+    .about-title {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .about-subtitle {
+      font-size: 14px;
+      letter-spacing: 0.3em;
+      color: var(--primary);
+      margin-bottom: 24px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .about-divider {
+      width: 60px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      margin: 0 auto 24px;
+    }
+
+    .about-section-title {
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      color: var(--text-3);
+      margin-bottom: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .about-team {
+      text-align: center;
+      min-height: 130px;
+      padding: 12px 0;
+    }
+
+    .about-team-line {
+      text-align: center;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      margin-bottom: 10px;
+      color: var(--text-2);
+      font-size: 15px;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
+
+    .about-tech {
+      font-size: 12px;
+      color: var(--text-3);
+      letter-spacing: 0.1em;
+      margin-top: 20px;
+    }
+
+    .about-close-btn {
+      margin-top: 24px;
+    }
+
+    /* === 暗箱面板 === */
+    .preset-card {
+      padding: 16px;
+      border-radius: 14px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .preset-card:hover {
+      transform: translateX(4px);
+    }
+
+    .preset-card.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    .rule-row {
+      padding: 10px 12px;
+      background: var(--glass-bg);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    /* === 统计 === */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      padding: 20px;
+      border-radius: 16px;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 8px;
+      background: var(--glass-bg);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    /* === 浮动 toast === */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 20px;
+      border-radius: 12px;
+      z-index: 9500;
+      animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      max-width: 80vw;
+      font-size: 14px;
+    }
+
+    @keyframes toastIn {
+      from { transform: translate(-50%, 30px); opacity: 0; }
+      to { transform: translate(-50%, 0); opacity: 1; }
+    }
+
+    /* 隐藏的批量输入 */
+    .paste-area {
+      width: 100%;
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    /* 响应式 */
+    @media (max-width: 768px) {
+      .top-nav {
+        height: auto;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 8px 12px;
+        gap: 6px;
+        row-gap: 4px;
+      }
+      .nav-slogan { display: none; }
+      .nav-item span:not(.icon) { display: none; }
+      .nav-item { padding: 8px; }
+      /* 强制 spacer 换行 — 把 spacer 变成 100% 宽的隐形分隔 */
+      .nav-spacer {
+        flex: 0 0 100%;
+        height: 0;
+      }
+      .nav-brand {
+        font-size: 16px;
+        margin: 0 auto;
+      }
+      .nav-items {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 4px;
+      }
+      .main-view { padding: 12px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <!-- ============== 顶部导航 ============== -->
+    <nav class="top-nav glass">
+      <div class="nav-brand" @dblclick="onLogoDoubleClick">
+        <div class="nav-brand-icon">
+          <i data-lucide="graduation-cap" style="width:20px;height:20px"></i>
+        </div>
+        <span>SeatMaster Pro</span>
+        <span class="nav-slogan">Seating, Reimagined</span>
+      </div>
+
+      <div class="nav-spacer"></div>
+
+      <div class="nav-items">
+        <button class="nav-item" :class="{active: view==='classroom'}" @click="switchView('classroom')">
+          <i data-lucide="layout-grid" style="width:16px;height:16px"></i>
+          <span>教室</span>
+        </button>
+        <button class="nav-item" :class="{active: view==='roster'}" @click="switchView('roster')">
+          <i data-lucide="users" style="width:16px;height:16px"></i>
+          <span>名单</span>
+        </button>
+        <button class="nav-item" :class="{active: view==='picker'}" @click="switchView('picker')">
+          <i data-lucide="dices" style="width:16px;height:16px"></i>
+          <span>点名</span>
+        </button>
+        <button class="nav-item" :class="{active: view==='arrange'}" @click="switchView('arrange')">
+          <i data-lucide="shuffle" style="width:16px;height:16px"></i>
+          <span>排座</span>
+        </button>
+        <button class="nav-item" :class="{active: view==='manipulator'}" @click="switchView('manipulator')">
+          <i data-lucide="eye-off" style="width:16px;height:16px"></i>
+          <span>haha</span>
+        </button>
+        <button class="nav-item" :class="{active: view==='stats'}" @click="switchView('stats')">
+          <i data-lucide="bar-chart-3" style="width:16px;height:16px"></i>
+          <span>统计</span>
+        </button>
+
+        <div class="nav-divider"></div>
+
+        <button class="nav-item" id="sound-toggle-btn" @click="toggleSound" :title="soundOn ? '关闭音效' : '开启音效'">
+          <i :data-lucide="soundOn ? 'volume-2' : 'volume-x'" style="width:16px;height:16px"></i>
+        </button>
+
+        <button class="nav-item" id="theme-toggle-btn" @click="toggleTheme" title="切换主题">
+          <i :data-lucide="theme === 'dark' ? 'sun' : 'moon'" style="width:16px;height:16px"></i>
+        </button>
+
+        <button class="nav-item nav-item-about" @click="openAbout" title="关于本应用">
+          <i data-lucide="info" style="width:16px;height:16px"></i>
+          <span>关于</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ============== 主体 ============== -->
+    <main class="main-view">
+
+      <!-- ===== 教室视图 ===== -->
+      <section v-if="view==='classroom'" class="view-section anim-fade">
+        <div class="classroom" :class="classroomSizeClass">
+          <div class="blackboard">S E A T M A S T E R   P R O</div>
+          <div class="podium">讲 台</div>
+
+          <div class="classroom-body">
+            <div v-for="(g, gi) in layout" :key="gi" class="group" :class="{'group-7-rows': g.special}">
+              <div class="group-label">
+                第 {{ gi+1 }} 大组
+                <span style="opacity:0.5;font-size:10px">({{ g.rows }} 行)</span>
+                <span v-if="g.special" class="group-tag-special">特殊 7 排</span>
+              </div>
+              <div class="group-cols">
+                <div v-for="c in g.cols" :key="c" class="group-col">
+                  <div v-for="r in g.rows" :key="r"
+                       class="seat"
+                       :data-group="gi"
+                       :class="{'seat-empty': !getSeatStudent(gi, c-1, r-1), 'seat-picked': isPicked(gi, c-1, r-1)}"
+                       @click="onSeatClick(gi, c-1, r-1)">
+                    <span class="seat-name">
+                      {{ getSeatStudentName(gi, c-1, r-1) || '空' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 门标识 -->
+            <div class="door">
+              <div class="door-icon">
+                <i data-lucide="door-open" style="width:18px;height:18px;opacity:0.6"></i>
+              </div>
+              <span>门</span>
+            </div>
+          </div>
+
+          <div style="margin-top:24px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+            <button class="glass-btn" @click="autoArrange">
+              <i data-lucide="shuffle" style="width:16px;height:16px"></i>
+              智能排座
+            </button>
+            <button class="glass-btn" @click="clearAllSeats">
+              <i data-lucide="trash-2" style="width:16px;height:16px"></i>
+              清空座位
+            </button>
+            <button class="glass-btn" @click="exportSeatingImage">
+              <i data-lucide="image" style="width:16px;height:16px"></i>
+              导出图片
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 名单管理 ===== -->
+      <section v-if="view==='roster'" class="view-section anim-fade">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <h2 style="font-size:22px;font-weight:700;letter-spacing:0.05em">
+            学生名单
+            <span style="font-size:14px;color:var(--text-3);font-weight:500;margin-left:8px">
+              {{ students.length }} 人
+            </span>
+          </h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="glass-btn" @click="loadDemoData" title="加载真实学生名单">
+              <i data-lucide="sparkles" style="width:16px;height:16px"></i>加载名单
+            </button>
+            <button class="glass-btn" @click="showImportDialog=true">
+              <i data-lucide="upload" style="width:16px;height:16px"></i>批量导入
+            </button>
+            <button class="glass-btn" @click="exportRoster">
+              <i data-lucide="download" style="width:16px;height:16px"></i>导出
+            </button>
+            <button class="glass-btn glass-btn-primary" @click="addNewStudent">
+              <i data-lucide="plus" style="width:16px;height:16px"></i>添加学生
+            </button>
+          </div>
+        </div>
+
+        <div v-if="students.length===0" class="glass" style="padding:60px 20px;text-align:center;color:var(--text-3)">
+          <i data-lucide="user-plus" style="width:48px;height:48px;margin:0 auto 16px;display:block;opacity:0.4"></i>
+          <p>还没有学生，请批量导入或手动添加</p>
+          <button class="glass-btn glass-btn-primary" style="margin-top:16px" @click="loadDemoData">
+            <i data-lucide="sparkles" style="width:16px;height:16px"></i>
+            加载真实学生名单
+          </button>
+        </div>
+
+        <div v-else class="roster-grid">
+          <div v-for="(s, idx) in students" :key="s.id"
+               class="student-card glass-soft anim-fade-up"
+               :style="`animation-delay: ${Math.min(idx*0.02, 0.5)}s`"
+               @click="editStudent(s)">
+            <div class="student-avatar" :class="s.gender||'unknown'">
+              {{ s.name.charAt(0) }}
+            </div>
+            <div style="font-weight:600;font-size:15px">{{ s.name }}</div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">
+              <span v-if="s.gender==='male'" style="color:#60a5fa">♂</span>
+              <span v-if="s.gender==='female'" style="color:#f472b6">♀</span>
+              <span v-if="s.height">{{ s.height }}cm</span>
+              <span v-if="s.vision">{{ s.vision }}°</span>
+              <span v-if="s.no">#{{ s.no }}</span>
+            </div>
+            <div v-if="s.tag" style="margin-top:6px;font-size:10px;padding:2px 6px;background:var(--primary-glow);color:var(--primary);border-radius:4px;display:inline-block">
+              {{ s.tag }}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 点名器 ===== -->
+      <section v-if="view==='picker'" class="view-section anim-fade">
+        <div class="picker-panel">
+          <h2 style="font-size:22px;font-weight:700;margin-bottom:20px;text-align:center;letter-spacing:0.05em">智能点名器</h2>
+
+          <div class="glass" style="padding:24px">
+            <div style="font-size:13px;color:var(--text-3);margin-bottom:10px;letter-spacing:0.1em">选择模式</div>
+            <div class="mode-grid">
+              <div class="mode-btn" :class="{active: pickerMode==='all'}" @click="pickerMode='all'">
+                <i data-lucide="shuffle" style="width:20px;height:20px;margin:0 auto 6px;display:block"></i>
+                <div style="font-size:13px;font-weight:600">全班随机</div>
+              </div>
+              <div class="mode-btn" :class="{active: pickerMode==='group'}" @click="pickerMode='group'">
+                <i data-lucide="layers" style="width:20px;height:20px;margin:0 auto 6px;display:block"></i>
+                <div style="font-size:13px;font-weight:600">按大组</div>
+              </div>
+              <div class="mode-btn" :class="{active: pickerMode==='column'}" @click="pickerMode='column'">
+                <i data-lucide="columns-3" style="width:20px;height:20px;margin:0 auto 6px;display:block"></i>
+                <div style="font-size:13px;font-weight:600">按列</div>
+              </div>
+              <div class="mode-btn" :class="{active: pickerMode==='row'}" @click="pickerMode='row'">
+                <i data-lucide="rows-3" style="width:20px;height:20px;margin:0 auto 6px;display:block"></i>
+                <div style="font-size:13px;font-weight:600">按行</div>
+              </div>
+              <div class="mode-btn" :class="{active: pickerMode==='weighted'}" @click="pickerMode='weighted'">
+                <i data-lucide="scale" style="width:20px;height:20px;margin:0 auto 6px;display:block"></i>
+                <div style="font-size:13px;font-weight:600">均衡</div>
+              </div>
+              <div class="mode-btn" :class="{active: pickerMode==='burst'}" @click="pickerMode='burst'">
+                <i data-lucide="zap" style="width:20px;height:20px;margin:0 auto 6px;display:block"></i>
+                <div style="font-size:13px;font-weight:600">连点</div>
+              </div>
+            </div>
+
+            <!-- 模式参数 -->
+            <div v-if="pickerMode==='group'" style="margin-bottom:16px">
+              <label style="font-size:12px;color:var(--text-3);display:block;margin-bottom:6px">选择大组</label>
+              <select class="glass-input" v-model.number="pickerGroup">
+                <option v-for="(g,gi) in layout" :key="gi" :value="gi">第 {{ gi+1 }} 大组</option>
+              </select>
+            </div>
+            <div v-if="pickerMode==='column'" style="margin-bottom:16px">
+              <label style="font-size:12px;color:var(--text-3);display:block;margin-bottom:6px">选择列号（0=左列, 1=右列）</label>
+              <select class="glass-input" v-model.number="pickerCol">
+                <option :value="0">第 1 列（左侧）</option>
+                <option :value="1">第 2 列（右侧）</option>
+              </select>
+            </div>
+            <div v-if="pickerMode==='row'" style="margin-bottom:16px">
+              <label style="font-size:12px;color:var(--text-3);display:block;margin-bottom:6px">选择行号（1 - {{ currentMaxRows }}）</label>
+              <select class="glass-input" v-model.number="pickerRow">
+                <option v-for="r in currentMaxRows" :key="r" :value="r-1">第 {{ r }} 行</option>
+              </select>
+            </div>
+            <div v-if="pickerMode==='burst'" style="margin-bottom:16px">
+              <label style="font-size:12px;color:var(--text-3);display:block;margin-bottom:6px">抽取人数</label>
+              <input class="glass-input" type="number" v-model.number="pickerCount" min="1" max="10" />
+            </div>
+
+            <button class="glass-btn glass-btn-primary shine-effect"
+                    style="width:100%;justify-content:center;padding:14px;font-size:15px"
+                    :disabled="students.length===0 || pickerSpinning"
+                    @click="startPicker">
+              <i data-lucide="play" style="width:18px;height:18px"></i>
+              {{ pickerSpinning ? '抽取中...' : '开始点名' }}
+            </button>
+          </div>
+
+          <!-- 历史 -->
+          <div v-if="pickHistory.length>0" class="glass" style="padding:20px;margin-top:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div style="font-size:13px;color:var(--text-3);letter-spacing:0.1em">最近抽签</div>
+              <button @click="clearPickHistory"
+                      class="glass-soft"
+                      style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;font-size:12px;color:var(--text-2);border:none;cursor:pointer"
+                      title="清空抽签记录">
+                <i data-lucide="trash-2" style="width:14px;height:14px"></i>
+                <span>清空</span>
+              </button>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <span v-for="(h, i) in pickHistory.slice(0,15)" :key="i"
+                    class="glass-soft"
+                    style="padding:4px 10px;font-size:12px;border-radius:8px">
+                {{ h.name }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 排座 ===== -->
+      <section v-if="view==='arrange'" class="view-section anim-fade">
+
+        <div class="glass" style="padding:24px;max-width:800px;margin:0 auto">
+          <div style="font-size:13px;color:var(--text-3);margin-bottom:16px;letter-spacing:0.1em">排座规则（可多选叠加）</div>
+
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+            <label style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:12px;border-radius:12px;background:var(--glass-bg)">
+              <div class="toggle" :class="{on: rules.height}" @click="toggleRule('height')"></div>
+              <div>
+                <div style="font-weight:600">身高规则</div>
+                <div style="font-size:12px;color:var(--text-3);margin-top:2px">矮个子坐前排，高个子坐后排</div>
+              </div>
+            </label>
+
+            <label style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:12px;border-radius:12px;background:var(--glass-bg)">
+              <div class="toggle" :class="{on: rules.vision}" @click="toggleRule('vision')"></div>
+              <div>
+                <div style="font-weight:600">视力规则</div>
+                <div style="font-size:12px;color:var(--text-3);margin-top:2px">近视度数深的优先坐前 2 排</div>
+              </div>
+            </label>
+
+            <label style="display:flex;align-items:center;gap:12px;cursor:pointer;padding:12px;border-radius:12px;background:var(--glass-bg)">
+              <div class="toggle" :class="{on: rules.gender}" @click="toggleRule('gender')"></div>
+              <div>
+                <div style="font-weight:600">性别平衡</div>
+                <div style="font-size:12px;color:var(--text-3);margin-top:2px">每大组尽量男女均衡分布</div>
+              </div>
+            </label>
+          </div>
+
+          <div v-if="activePreset" style="padding:12px 16px;background:var(--primary-glow);border:1px solid var(--primary);border-radius:12px;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+            <i data-lucide="shield-check" style="width:16px;height:16px;color:var(--primary)"></i>
+            <span style="font-size:13px;color:var(--primary)">已应用暗箱预设：<b>{{ activePreset.name }}</b>（{{ activePreset.rules.length }} 条约束）</span>
+          </div>
+
+          <button class="glass-btn glass-btn-primary shine-effect"
+                  style="width:100%;justify-content:center;padding:14px;font-size:15px"
+                  :disabled="students.length===0"
+                  @click="runArrange">
+            <i data-lucide="sparkles" style="width:18px;height:18px"></i>
+            一键智能排座
+          </button>
+
+          <div v-if="lastArrangeMsg" class="anim-fade"
+               style="margin-top:16px;padding:12px;background:var(--glass-bg);border-radius:12px;font-size:13px;color:var(--text-2)">
+            {{ lastArrangeMsg }}
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 暗箱操作 ===== -->
+      <section v-if="view==='manipulator'" class="view-section anim-fade">
+        <h2 style="font-size:22px;font-weight:700;margin-bottom:8px">haha</h2>
+        <p style="color:var(--text-3);font-size:13px;margin-bottom:20px">
+          设置后，表面上看起来是随机排座，但实际铁律生效。学生无法察觉。
+        </p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <!-- 左：方案列表 -->
+          <div class="glass" style="padding:20px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <h3 style="font-weight:600">预设方案</h3>
+              <button class="glass-btn glass-btn-primary" style="padding:6px 12px;font-size:12px" @click="createNewPreset">
+                <i data-lucide="plus" style="width:14px;height:14px"></i>新建
+              </button>
+            </div>
+            <div v-if="presets.length===0" style="padding:30px 10px;text-align:center;color:var(--text-3);font-size:13px">
+              还没有方案，点击"新建"开始
+            </div>
+            <div v-for="p in presets" :key="p.id"
+                 class="preset-card glass-soft"
+                 :class="{active: activePresetId===p.id}"
+                 @click="selectPreset(p.id)">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <div style="font-weight:600;font-size:14px">{{ p.name }}</div>
+                  <div style="font-size:11px;color:var(--text-3);margin-top:2px">{{ p.rules.length }} 条约束</div>
+                </div>
+                <div style="display:flex;gap:4px">
+                  <button class="glass-btn glass-btn-icon" style="width:28px;height:28px" @click.stop="deletePreset(p.id)">
+                    <i data-lucide="trash-2" style="width:14px;height:14px"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 右：约束编辑 -->
+          <div class="glass" style="padding:20px">
+            <div v-if="!activePreset" style="padding:40px 10px;text-align:center;color:var(--text-3);font-size:13px">
+              请先选择或新建一个方案
+            </div>
+            <div v-else>
+              <input class="glass-input" v-model="activePreset.name" placeholder="方案名称" style="margin-bottom:12px" @input="savePreset" />
+
+              <h3 style="font-weight:600;margin-bottom:10px;font-size:14px">约束规则</h3>
+              <div v-if="activePreset.rules.length===0" style="padding:20px 10px;text-align:center;color:var(--text-3);font-size:12px">
+                暂无约束
+              </div>
+              <div v-for="(r, ri) in activePreset.rules" :key="ri" class="rule-row">
+                <span style="flex:1">{{ formatRule(r) }}</span>
+                <button class="glass-btn glass-btn-icon" style="width:24px;height:24px" @click="removeRule(ri)">
+                  <i data-lucide="x" style="width:12px;height:12px"></i>
+                </button>
+              </div>
+
+              <button class="glass-btn" style="width:100%;justify-content:center;margin-top:10px" @click="showAddRule=true">
+                <i data-lucide="plus" style="width:14px;height:14px"></i>添加约束
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 统计 ===== -->
+      <section v-if="view==='stats'" class="view-section anim-fade">
+        <h2 style="font-size:22px;font-weight:700;margin-bottom:20px">数据统计</h2>
+
+        <div class="stat-grid">
+          <div class="stat-card glass">
+            <div style="font-size:12px;color:var(--text-3);letter-spacing:0.1em">学生总数</div>
+            <div class="stat-value" style="margin-top:8px">{{ students.length }}</div>
+          </div>
+          <div class="stat-card glass">
+            <div style="font-size:12px;color:var(--text-3);letter-spacing:0.1em">已排座位</div>
+            <div class="stat-value" style="margin-top:8px">{{ seatedCount }}<span style="font-size:14px;color:var(--text-3);font-weight:500"> / {{ totalSeatsCount }}</span></div>
+          </div>
+          <div class="stat-card glass">
+            <div style="font-size:12px;color:var(--text-3);letter-spacing:0.1em">累计抽签</div>
+            <div class="stat-value" style="margin-top:8px">{{ pickHistory.length }}</div>
+          </div>
+          <div class="stat-card glass">
+            <div style="font-size:12px;color:var(--text-3);letter-spacing:0.1em">暗箱方案</div>
+            <div class="stat-value" style="margin-top:8px">{{ presets.length }}</div>
+          </div>
+        </div>
+
+        <div class="glass" style="padding:24px;margin-top:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <h3 style="font-weight:600;margin:0">被抽次数排行</h3>
+            <button v-if="topPicked.length>0" @click="clearPickCounts"
+                    class="glass-soft"
+                    style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:8px;font-size:12px;color:var(--text-2);border:none;cursor:pointer"
+                    title="清空被抽次数">
+              <i data-lucide="trash-2" style="width:14px;height:14px"></i>
+              <span>清空</span>
+            </button>
+          </div>
+          <div v-if="topPicked.length===0" style="color:var(--text-3);font-size:13px;text-align:center;padding:20px">
+            暂无数据
+          </div>
+          <div v-for="(item, i) in topPicked" :key="i" class="bar-row">
+            <span style="width:80px;font-weight:500">{{ item.name }}</span>
+            <div class="bar-track">
+              <div class="bar-fill" :style="`width:${item.percent}%`"></div>
+            </div>
+            <span style="width:40px;text-align:right;color:var(--text-3);font-size:12px">{{ item.count }}</span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ============== 老虎机覆盖层 ============== -->
+    <!-- 由 Picker.js 自管理，无需 Vue 模板 -->
+
+    <!-- ============== 学生编辑模态框 ============== -->
+    <div v-if="editingStudent" class="modal-overlay" @click.self="editingStudent=null">
+      <div class="glass-strong gradient-border" style="padding:28px;width:420px;max-width:90vw">
+        <h3 style="font-size:18px;font-weight:700;margin-bottom:16px">编辑学生信息</h3>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <label style="font-size:12px;color:var(--text-3);display:block;margin-bottom:4px">姓名 *</label>
+            <input class="glass-input" v-model="editingStudent.name" placeholder="姓名" />
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <label style="font-size:12px;color:var(--text-3);display:block;margin-bottom:4px">性别</label>
+              <select class="glass-input" v-model="editingStudent.gender">
+                <option value="unknown">未设置</option>
+                <option value="male">男</option>
+                <option value="female">女</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--text-3);display:block;margin-bottom:4px">学号</label>
+              <input class="glass-input" v-model="editingStudent.no" placeholder="学号" />
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <label style="font-size:12px;color:var(--text-3);display:block;margin-bottom:4px">身高 (cm)</label>
+              <input class="glass-input" type="number" v-model.number="editingStudent.height" placeholder="如 165" />
+            </div>
+            <div>
+              <label style="font-size:12px;color:var(--text-3);display:block;margin-bottom:4px">视力度数</label>
+              <input class="glass-input" type="number" v-model.number="editingStudent.vision" placeholder="如 300" />
+            </div>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-3);display:block;margin-bottom:4px">标签</label>
+            <input class="glass-input" v-model="editingStudent.tag" placeholder="如：班长 / 活跃 / 安静" />
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-3);display:block;margin-bottom:4px">备注</label>
+            <input class="glass-input" v-model="editingStudent.note" placeholder="可选" />
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:20px;justify-content:space-between">
+          <button class="glass-btn" style="color:var(--danger)" @click="deleteCurrentStudent">
+            <i data-lucide="trash-2" style="width:14px;height:14px"></i>删除
+          </button>
+          <div style="display:flex;gap:8px">
+            <button class="glass-btn" @click="editingStudent=null">取消</button>
+            <button class="glass-btn glass-btn-primary" @click="saveStudent">保存</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============== 批量导入模态框 ============== -->
+    <div v-if="showImportDialog" class="modal-overlay" @click.self="showImportDialog=false">
+      <div class="glass-strong gradient-border" style="padding:28px;width:520px;max-width:90vw">
+        <h3 style="font-size:18px;font-weight:700;margin-bottom:16px">批量导入学生</h3>
+        <p style="font-size:13px;color:var(--text-3);margin-bottom:12px">每行一个名字，或使用 JSON 格式</p>
+        <textarea class="glass-input paste-area" v-model="importText" placeholder="张三&#10;李四&#10;王五&#10;赵六&#10;..."></textarea>
+        <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+          <button class="glass-btn" @click="showImportDialog=false">取消</button>
+          <button class="glass-btn" @click="triggerFileImport">
+            <i data-lucide="file-up" style="width:14px;height:14px"></i>导入 JSON
+          </button>
+          <button class="glass-btn glass-btn-primary" @click="doImportText">
+            <i data-lucide="check" style="width:14px;height:14px"></i>导入
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============== 添加规则模态框 ============== -->
+    <div v-if="showAddRule" class="modal-overlay" @click.self="showAddRule=false">
+      <div class="glass-strong gradient-border" style="padding:28px;width:480px;max-width:90vw">
+        <h3 style="font-size:18px;font-weight:700;margin-bottom:16px">添加约束规则</h3>
+        <div style="margin-bottom:12px">
+          <label style="font-size:12px;color:var(--text-3);display:block;margin-bottom:6px">规则类型</label>
+          <select class="glass-input" v-model="newRule.type">
+            <option value="group">强制分组（指定大组）</option>
+            <option value="seat">强制座位（指定具体座位）</option>
+            <option value="deskmate">强制同桌</option>
+            <option value="sameGroup">强制同组</option>
+            <option value="avoidSameGroup">避让同组</option>
+          </select>
+        </div>
+
+        <div v-if="newRule.type==='group'" style="display:flex;flex-direction:column;gap:10px">
+          <input class="glass-input" v-model="newRule.student" placeholder="学生姓名" list="student-list" />
+          <select class="glass-input" v-model.number="newRule.groupIndex">
+            <option v-for="(g,gi) in layout" :key="gi" :value="gi">第 {{ gi+1 }} 大组</option>
+          </select>
+        </div>
+
+        <div v-if="newRule.type==='seat'" style="display:flex;flex-direction:column;gap:10px">
+          <input class="glass-input" v-model="newRule.student" placeholder="学生姓名" list="student-list" />
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <select class="glass-input" v-model.number="newRule.group">
+              <option v-for="(g,gi) in layout" :key="gi" :value="gi">组 {{ gi+1 }}</option>
+            </select>
+            <select class="glass-input" v-model.number="newRule.col">
+              <option :value="0">列 1</option>
+              <option :value="1">列 2</option>
+            </select>
+            <select class="glass-input" v-model.number="newRule.row">
+              <option v-for="r in 7" :key="r" :value="r-1">行 {{ r }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div v-if="['deskmate','sameGroup','avoidSameGroup'].includes(newRule.type)" style="display:flex;flex-direction:column;gap:10px">
+          <input class="glass-input" v-model="newRule.studentA" placeholder="学生 A" list="student-list" />
+          <input class="glass-input" v-model="newRule.studentB" placeholder="学生 B" list="student-list" />
+        </div>
+
+        <datalist id="student-list">
+          <option v-for="s in students" :key="s.id" :value="s.name"></option>
+        </datalist>
+
+        <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+          <button class="glass-btn" @click="showAddRule=false">取消</button>
+          <button class="glass-btn glass-btn-primary" @click="confirmAddRule">
+            <i data-lucide="plus" style="width:14px;height:14px"></i>添加
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============== 关于模态框 ============== -->
+    <div v-if="showAbout" class="modal-overlay" @click.self="closeAbout">
+      <div class="about-modal glass-strong gradient-border modal-content" @click.stop>
+        <div class="about-title gradient-text">SeatMaster Pro</div>
+        <div class="about-subtitle">Seating, Reimagined</div>
+        <div class="about-divider"></div>
+
+        <div class="about-section-title">— 团队成员 —</div>
+        <div class="about-team" id="about-team-lines"></div>
+
+        <div class="about-section-title" style="margin-top:16px">— 技术栈 —</div>
+        <div class="about-tech">Vue 3 · Tailwind · GSAP · Web Audio API</div>
+
+        <div style="margin-top:20px;font-size:11px;color:var(--text-4);letter-spacing:0.1em">© 2026 SeatMaster Pro</div>
+
+        <button class="glass-btn about-close-btn" @click="closeAbout">关闭</button>
+      </div>
+    </div>
+
+    <!-- ============== Toast ============== -->
+    <transition>
+      <div v-if="toast.show" class="toast glass-strong">
+        {{ toast.text }}
+      </div>
+    </transition>
+
+  </div>
+
+  <!-- ============== 业务脚本 ============== -->
+  <script src="js/store.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/arranger.js"></script>
+  <script src="js/picker.js"></script>
+  <script src="js/manipulator.js"></script>
+  <script src="js/about.js"></script>
+  <script src="js/secret.js"></script>
+  <script src="js/main.js"></script>
+
+  <script>
+    // 渲染 lucide 图标
+    setTimeout(() => {
+      if (window.lucide) lucide.createIcons();
+    }, 100);
+  </script>
+</body>
+</html>
