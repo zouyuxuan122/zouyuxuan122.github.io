@@ -1,0 +1,163 @@
+/* ============================================
+   SeatMaster Pro — Theme System
+   ============================================ */
+
+:root,
+[data-theme="dark"] {
+  --bg-1: #0a0e27;
+  --bg-2: #1e1b4b;
+  --bg-3: #312e81;
+  --bg-gradient: linear-gradient(135deg, #0a0e27 0%, #1e1b4b 50%, #312e81 100%);
+
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-bg-strong: rgba(255, 255, 255, 0.10);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --glass-highlight: rgba(255, 255, 255, 0.08);
+
+  --text-1: #f8fafc;
+  --text-2: rgba(248, 250, 252, 0.78);
+  --text-3: rgba(248, 250, 252, 0.55);
+  --text-4: rgba(248, 250, 252, 0.35);
+
+  --primary: #8b5cf6;
+  --primary-glow: rgba(139, 92, 246, 0.45);
+  --accent: #06b6d4;
+  --accent-glow: rgba(6, 182, 212, 0.45);
+  --warn: #f59e0b;
+  --warn-glow: rgba(245, 158, 11, 0.45);
+  --success: #10b981;
+  --success-glow: rgba(16, 185, 129, 0.45);
+  --danger: #ef4444;
+  --danger-glow: rgba(239, 68, 68, 0.45);
+
+  --group-1-a: #a78bfa;
+  --group-1-b: #ec4899;
+  --group-2-a: #22d3ee;
+  --group-2-b: #3b82f6;
+  --group-3-a: #34d399;
+  --group-3-b: #06b6d4;
+  --group-4-a: #fbbf24;
+  --group-4-b: #ef4444;
+
+  --blackboard: #1a1f3a;
+  --blackboard-border: #4a5568;
+
+  --desk-empty: rgba(255, 255, 255, 0.05);
+  --desk-empty-border: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="light"] {
+  --bg-1: #f0f4ff;
+  --bg-2: #fef6ff;
+  --bg-3: #fff1f2;
+  --bg-gradient: linear-gradient(135deg, #e0e7ff 0%, #fce7f3 50%, #ffe4e6 100%);
+
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-bg-strong: rgba(255, 255, 255, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.85);
+  --glass-shadow: 0 8px 32px rgba(99, 102, 241, 0.15);
+  --glass-highlight: rgba(255, 255, 255, 0.6);
+
+  --text-1: #1e1b4b;
+  --text-2: rgba(30, 27, 75, 0.78);
+  --text-3: rgba(30, 27, 75, 0.55);
+  --text-4: rgba(30, 27, 75, 0.35);
+
+  --primary: #6366f1;
+  --primary-glow: rgba(99, 102, 241, 0.35);
+  --accent: #06b6d4;
+  --accent-glow: rgba(6, 182, 212, 0.35);
+  --warn: #f59e0b;
+  --warn-glow: rgba(245, 158, 11, 0.35);
+  --success: #10b981;
+  --success-glow: rgba(16, 185, 129, 0.35);
+  --danger: #ef4444;
+  --danger-glow: rgba(239, 68, 68, 0.35);
+
+  --group-1-a: #a78bfa;
+  --group-1-b: #ec4899;
+  --group-2-a: #22d3ee;
+  --group-2-b: #3b82f6;
+  --group-3-a: #34d399;
+  --group-3-b: #06b6d4;
+  --group-4-a: #fbbf24;
+  --group-4-b: #ef4444;
+
+  --blackboard: #2d3748;
+  --blackboard-border: #1a202c;
+
+  --desk-empty: rgba(255, 255, 255, 0.4);
+  --desk-empty-border: rgba(99, 102, 241, 0.3);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  color: var(--text-1);
+  background: var(--bg-1);
+  overflow: hidden;
+  transition: color 0.4s ease;
+}
+
+body {
+  position: relative;
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 20%, var(--primary-glow) 0%, transparent 45%),
+    radial-gradient(circle at 85% 80%, var(--accent-glow) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, var(--warn-glow) 0%, transparent 55%);
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.6s ease;
+}
+
+[data-theme="light"] body::before {
+  opacity: 0.2;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  color: var(--text-1);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--glass-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}

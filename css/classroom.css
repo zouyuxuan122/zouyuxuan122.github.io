@@ -1,0 +1,317 @@
+/* ============================================
+   SeatMaster Pro — Classroom Layout
+   ============================================ */
+
+.classroom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* 黑板 */
+.blackboard {
+  width: 90%;
+  max-width: 1000px;
+  height: 80px;
+  background: var(--blackboard);
+  border: 8px solid var(--blackboard-border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  margin-bottom: 16px;
+  position: relative;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3),
+              inset 0 0 40px rgba(0, 0, 0, 0.4);
+}
+
+.blackboard::before,
+.blackboard::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 30px;
+  background: linear-gradient(to bottom, #c0a062, #8a6a3e);
+  border-radius: 3px;
+}
+.blackboard::before { left: -16px; }
+.blackboard::after { right: -16px; }
+
+/* 讲台 */
+.podium {
+  width: 200px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  border-radius: 10px 10px 4px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  margin-bottom: 32px;
+  box-shadow: 0 6px 20px var(--primary-glow);
+}
+
+/* 教室主体 — 4 大组按行内反向排列，使「第一大组」紧贴右侧「门」 */
+.classroom-body {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 1200px;
+  position: relative;
+  gap: 0;
+}
+
+/* 大组容器 */
+.group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.group-label {
+  font-size: 12px;
+  color: var(--text-3);
+  letter-spacing: 0.2em;
+  margin-bottom: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.group-cols {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+
+.group-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 座位 */
+.seat {
+  width: 80px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  user-select: none;
+  overflow: hidden;
+}
+
+.seat[data-group="0"] { background: linear-gradient(135deg, var(--group-1-a), var(--group-1-b)); }
+.seat[data-group="1"] { background: linear-gradient(135deg, var(--group-2-a), var(--group-2-b)); border-color: rgba(255, 255, 255, 0.25); }
+.seat[data-group="2"] { background: linear-gradient(135deg, var(--group-3-a), var(--group-3-b)); }
+.seat[data-group="3"] { background: linear-gradient(135deg, var(--group-4-a), var(--group-4-b)); }
+
+.seat::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.6s ease;
+}
+
+.seat:hover {
+  transform: translateY(-4px) scale(1.04);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.seat:hover::before {
+  left: 100%;
+}
+
+.seat-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.seat-empty {
+  background: var(--desk-empty) !important;
+  border: 1.5px dashed var(--desk-empty-border) !important;
+  color: var(--text-4) !important;
+  font-weight: 400;
+  font-size: 11px;
+  cursor: default;
+}
+
+.seat-empty:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.seat-empty::before { display: none; }
+
+.seat-picked {
+  z-index: 100;
+  animation: pulseGlow 1.2s ease-in-out infinite;
+  transform: scale(1.1);
+}
+
+/* 门 — 位于教室右上角 */
+.door {
+  position: absolute;
+  right: -10px;
+  top: 0;
+  width: 50px;
+  height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.door-icon {
+  width: 36px;
+  height: 60px;
+  border: 2px solid var(--glass-border);
+  border-radius: 4px 18px 4px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-bg);
+  margin-bottom: 4px;
+  position: relative;
+}
+
+.door-icon::before {
+  content: "";
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+/* 讲台标签 */
+.teacher-tag {
+  position: absolute;
+  right: -10px;
+  top: 0;
+  width: 30px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+/* 响应式 */
+@media (max-width: 1100px) {
+  .seat { width: 66px; height: 52px; }
+  .seat-name { font-size: 12px; max-width: 60px; }
+}
+
+@media (max-width: 800px) {
+  .seat { width: 52px; height: 42px; }
+  .seat-name { font-size: 11px; max-width: 48px; }
+  .group-cols { gap: 5px; }
+  .group-col { gap: 5px; }
+  .blackboard { height: 60px; font-size: 12px; }
+  .podium { width: 160px; height: 32px; font-size: 11px; }
+}
+
+/* 大组高亮（7 行特殊组）— 用 inline 标签替代浮动徽标，避免被裁切 */
+.group-7-rows {
+  position: relative;
+}
+
+.group-tag-special {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 10px;
+  color: var(--accent);
+  background: var(--glass-bg-strong);
+  border: 1px solid var(--accent-glow);
+  border-radius: 6px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  vertical-align: middle;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+/* 教室主体 — 完全显示，不滚动 */
+.classroom-body {
+  padding: 10px;
+  overflow: visible;
+}
+
+/* 多行自适应座位大小 */
+.classroom.seats-many .seat {
+  width: 52px;
+  height: 42px;
+  font-size: 11px;
+}
+.classroom.seats-many .seat-name {
+  font-size: 11px;
+  max-width: 46px;
+}
+.classroom.seats-very-many .seat {
+  width: 44px;
+  height: 36px;
+  font-size: 10px;
+}
+.classroom.seats-very-many .seat-name {
+  font-size: 10px;
+  max-width: 40px;
+}
+.classroom.seats-huge .seat {
+  width: 36px;
+  height: 30px;
+  font-size: 9px;
+}
+.classroom.seats-huge .seat-name {
+  font-size: 9px;
+  max-width: 32px;
+}
