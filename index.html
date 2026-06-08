@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZXDex — AI Desktop Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a0f;
+  --bg2:#12121a;
+  --bg3:#1a1a28;
+  --card:#1e1e2e;
+  --card-hover:#262640;
+  --border:#2a2a40;
+  --text:#e8e8f0;
+  --text2:#9898b0;
+  --text3:#6868a0;
+  --accent:#7c5cfc;
+  --accent2:#a78bfa;
+  --accent-glow:rgba(124,92,252,0.3);
+  --gradient:linear-gradient(135deg,#7c5cfc,#4f46e5);
+  --gradient2:linear-gradient(135deg,#7c5cfc,#a78bfa,#6366f1);
+  --pixel:#fbbf24;
+  --pixel-dark:#f59e0b;
+  --radius:16px;
+  --radius-sm:10px;
+  --shadow:0 8px 40px rgba(0,0,0,0.4);
+  --transition:all 0.4s cubic-bezier(0.16,1,0.3,1);
+}
+html{scroll-behavior:smooth;scrollbar-width:thin;scrollbar-color:var(--accent) transparent}
+body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px}
+
+/* Noise overlay */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:9999}
+
+/* Orb background */
+.orb{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0;opacity:0.5}
+.orb-1{width:600px;height:600px;background:rgba(124,92,252,0.15);top:-200px;right:-200px;animation:orbFloat 20s ease-in-out infinite}
+.orb-2{width:500px;height:500px;background:rgba(79,70,229,0.1);bottom:-150px;left:-150px;animation:orbFloat 25s ease-in-out infinite reverse}
+.orb-3{width:400px;height:400px;background:rgba(168,85,247,0.08);top:50%;left:50%;transform:translate(-50%,-50%);animation:orbFloat 18s ease-in-out infinite 5s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-30px) scale(1.1)}66%{transform:translate(-20px,20px) scale(0.95)}}
+
+/* Navigation */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;background:rgba(10,10,15,0.8);backdrop-filter:blur(20px) saturate(1.5);border-bottom:1px solid var(--border);transition:var(--transition)}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;letter-spacing:-0.3px;text-decoration:none;color:var(--text)}
+.nav-logo .dot{width:24px;height:24px;background:var(--gradient);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px}
+.nav-links{display:flex;gap:4px;list-style:none;align-items:center}
+.nav-links a{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);text-decoration:none;transition:var(--transition);position:relative}
+.nav-links a:hover,.nav-links a.active{color:var(--text);background:rgba(124,92,252,0.1)}
+.nav-cta{padding:8px 20px;border-radius:8px;border:none;background:var(--gradient);color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:var(--transition);text-decoration:none}
+.nav-cta:hover{transform:scale(1.05);box-shadow:0 4px 20px var(--accent-glow)}
+
+/* Sections */
+section{position:relative;z-index:1;padding:100px 24px}
+.section-inner{max-width:1200px;margin:0 auto}
+.section-label{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;letter-spacing:0.3px;text-transform:uppercase;background:rgba(124,92,252,0.12);color:var(--accent2);margin-bottom:16px;border:1px solid rgba(124,92,252,0.15)}
+.section-title{font-size:clamp(32px,5vw,56px);font-weight:800;letter-spacing:-1.5px;line-height:1.1;margin-bottom:16px;background:var(--gradient2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.section-sub{font-size:18px;color:var(--text2);max-width:640px;line-height:1.7}
+
+/* Hero */
+#hero{min-height:100vh;display:flex;align-items:center;padding-top:80px;position:relative;overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+.hero-title{font-size:clamp(40px,6vw,72px);font-weight:800;letter-spacing:-2px;line-height:1.05;margin-bottom:20px}
+.hero-title span{background:var(--gradient2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-desc{font-size:18px;color:var(--text2);line-height:1.8;margin-bottom:32px;max-width:520px}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn-primary,.btn-secondary{padding:14px 28px;border-radius:12px;font-size:15px;font-weight:600;border:none;cursor:pointer;transition:var(--transition);text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--gradient);color:#fff;box-shadow:0 4px 20px var(--accent-glow)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--accent-glow)}
+.btn-secondary{background:var(--card);color:var(--text);border:1px solid var(--border)}
+.btn-secondary:hover{background:var(--card-hover);border-color:var(--accent);transform:translateY(-2px)}
+
+/* Pixel Dog Hero Art */
+.hero-art{display:flex;justify-content:center;align-items:center;position:relative}
+.pixel-dog-container{position:relative;width:280px;height:280px;display:flex;align-items:center;justify-content:center}
+.pixel-dog{position:relative;animation:pixelBounce 3s ease-in-out infinite}
+.pixel-ring{position:absolute;inset:-20px;border-radius:50%;border:1px solid rgba(124,92,252,0.15);animation:ringPulse 4s ease-in-out infinite}
+.pixel-ring:nth-child(2){inset:-40px;animation-delay:1s}
+.pixel-ring:nth-child(3){inset:-60px;animation-delay:2s}
+@keyframes pixelBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes ringPulse{0%,100%{opacity:0.3;transform:scale(1)}50%{opacity:0.8;transform:scale(1.05)}}
+
+/* Pixel art dog css */
+.pixel-art{display:grid;grid-template-columns:repeat(16,12px);grid-template-rows:repeat(16,12px);gap:1px;image-rendering:pixelated}
+.p{width:12px;height:12px;border-radius:1px}
+.p-y{background:var(--pixel)}
+.p-d{background:var(--pixel-dark)}
+.p-w{background:#fff;opacity:0.9}
+.p-b{background:#1a1a2e}
+.p-g{background:#333355}
+.p-n{background:transparent}
+
+/* Stats bar */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;margin-top:60px;padding:32px;background:var(--card);border-radius:var(--radius);border:1px solid var(--border)}
+.stat-item{text-align:center}
+.stat-num{font-size:28px;font-weight:800;background:var(--gradient2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-label{font-size:13px;color:var(--text2);margin-top:4px}
+
+/* Feature Cards */
+.features-grid,.features-grid-alt{display:grid;gap:24px}
+.features-grid{grid-template-columns:repeat(3,1fr);margin-top:48px}
+.features-grid-alt{grid-template-columns:repeat(2,1fr);margin-top:48px}
+.feature-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:32px;transition:var(--transition);position:relative;overflow:hidden;cursor:default}
+.feature-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gradient);transform:scaleX(0);transform-origin:left;transition:transform 0.6s cubic-bezier(0.16,1,0.3,1)}
+.feature-card:hover{background:var(--card-hover);border-color:rgba(124,92,252,0.3);transform:translateY(-4px);box-shadow:0 12px 48px rgba(0,0,0,0.3)}
+.feature-card:hover::before{transform:scaleX(1)}
+.feature-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px;background:rgba(124,92,252,0.1);border:1px solid rgba(124,92,252,0.15)}
+.feature-card h3{font-size:18px;font-weight:700;margin-bottom:8px}
+.feature-card p{font-size:14px;color:var(--text2);line-height:1.7}
+.feature-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.feature-tag{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;background:rgba(124,92,252,0.08);color:var(--accent2);border:1px solid rgba(124,92,252,0.1)}
+
+/* Chat UI Demo */
+.chat-demo{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-top:48px}
+.chat-demo-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--bg2)}
+.chat-demo-header-left{display:flex;align-items:center;gap:10px}
+.chat-demo-avatar{width:32px;height:32px;border-radius:8px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:700}
+.chat-demo-header h4{font-size:14px;font-weight:600}
+.chat-demo-header span{font-size:12px;color:var(--text2)}
+.chat-demo-badges{display:flex;gap:6px}
+.chat-demo-badge{padding:3px 10px;border-radius:6px;font-size:11px;font-weight:500}
+.chat-demo-badge.search{background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.2)}
+.chat-demo-badge.tools{background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.2)}
+.chat-demo-body{padding:20px;display:flex;flex-direction:column;gap:16px;max-height:420px;overflow-y:auto}
+.msg{display:flex;gap:12px;max-width:85%;animation:msgIn 0.5s cubic-bezier(0.16,1,0.3,1) both}
+.msg.user{flex-direction:row-reverse;align-self:flex-end}
+.msg-avatar{width:32px;height:32px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600}
+.msg-avatar.ai{background:var(--gradient);color:#fff}
+.msg-avatar.user{background:var(--bg3);color:var(--accent2);border:1px solid var(--border)}
+.msg-bubble{padding:12px 16px;border-radius:12px;font-size:14px;line-height:1.6}
+.msg.ai .msg-bubble{background:var(--bg3);border:1px solid var(--border);color:var(--text)}
+.msg.user .msg-bubble{background:var(--accent);color:#fff}
+.msg-bubble .tool-call{margin-top:8px;padding:8px 12px;border-radius:8px;background:rgba(0,0,0,0.2);font-family:monospace;font-size:12px;color:var(--accent2)}
+.msg-bubble .tool-result{margin-top:6px;padding:6px 10px;border-radius:6px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.15);font-size:12px;color:#34d399}
+@keyframes msgIn{from{opacity:0;transform:translateY(12px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.chat-demo-input{display:flex;align-items:center;gap:10px;padding:12px 20px;border-top:1px solid var(--border);background:var(--bg2)}
+.chat-demo-input input{flex:1;padding:10px 16px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:14px;outline:none;transition:var(--transition)}
+.chat-demo-input input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.chat-demo-input button{width:38px;height:38px;border-radius:10px;border:none;background:var(--gradient);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:var(--transition)}
+.chat-demo-input button:hover{transform:scale(1.05);box-shadow:0 4px 16px var(--accent-glow)}
+
+/* Tool icons in chat */
+.tool-row{display:flex;gap:8px;padding:8px 0;flex-wrap:wrap}
+.tool-btn-demo{padding:6px 14px;border-radius:8px;font-size:12px;font-weight:500;background:rgba(124,92,252,0.08);border:1px solid rgba(124,92,252,0.12);color:var(--text2);cursor:pointer;transition:var(--transition)}
+.tool-btn-demo:hover{background:rgba(124,92,252,0.15);color:var(--text)}
+
+/* Computer Use Demo */
+.compuse-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:48px}
+.compuse-screen{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;aspect-ratio:16/10;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.compuse-screen-inner{width:100%;height:100%;border-radius:8px;background:var(--bg2);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.compuse-window-bar{position:absolute;top:0;left:0;right:0;height:28px;background:var(--bg3);display:flex;align-items:center;gap:6px;padding:0 12px}
+.compuse-dot{width:8px;height:8px;border-radius:50%}
+.compuse-dot.r{background:#ff5f57}
+.compuse-dot.y{background:#ffbd2e}
+.compuse-dot.g{background:#28c840}
+.compuse-desktop{width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding-top:28px;position:relative}
+.compuse-desktop-icons{display:flex;flex-direction:column;gap:16px}
+.compuse-icon{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--text2)}
+.compuse-icon-folder{width:40px;height:32px;background:rgba(124,92,252,0.2);border-radius:4px;position:relative;display:flex;align-items:center;justify-content:center}
+.compuse-cursor{position:absolute;width:16px;height:20px;animation:cursorMove 4s ease-in-out infinite;pointer-events:none}
+@keyframes cursorMove{0%,100%{top:30%;left:20%}25%{top:40%;left:60%}50%{top:60%;left:40%}75%{top:35%;left:70%}}
+.compuse-tools{display:flex;flex-direction:column;gap:12px}
+.compuse-tool{padding:16px 20px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;align-items:center;gap:14px;transition:var(--transition);cursor:default}
+.compuse-tool:hover{border-color:rgba(124,92,252,0.3);background:var(--card-hover)}
+.compuse-tool-icon{width:40px;height:40px;border-radius:10px;background:rgba(124,92,252,0.1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.compuse-tool-info h4{font-size:14px;font-weight:600}
+.compuse-tool-info p{font-size:12px;color:var(--text2)}
+.compuse-log{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;font-family:monospace;font-size:12px;color:var(--text2);margin-top:16px;max-height:160px;overflow-y:auto}
+.compuse-log-line{padding:8px 0;border-bottom:1px solid var(--border);display:flex;gap:8px}
+.compuse-log-line:last-child{border:none}
+.compuse-log-time{color:var(--text3);flex-shrink:0}
+.compuse-log-msg{color:var(--text2)}
+.compuse-log-msg.ok{color:#34d399}
+.compuse-log-msg.info{color:var(--accent2)}
+
+/* Office Cards */
+.office-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:48px}
+.office-card{padding:24px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center;transition:var(--transition);cursor:default}
+.office-card:hover{background:var(--card-hover);border-color:rgba(124,92,252,0.3);transform:translateY(-3px);box-shadow:0 8px 32px rgba(0,0,0,0.3)}
+.office-card-icon{width:56px;height:56px;border-radius:14px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.office-card:nth-child(1) .office-card-icon{background:rgba(239,68,68,0.12);color:#ef4444}
+.office-card:nth-child(2) .office-card-icon{background:rgba(52,211,153,0.12);color:#34d399}
+.office-card:nth-child(3) .office-card-icon{background:rgba(59,130,246,0.12);color:#3b82f6}
+.office-card:nth-child(4) .office-card-icon{background:rgba(251,191,36,0.12);color:#fbbf24}
+.office-card h4{font-size:15px;font-weight:600;margin-bottom:4px}
+.office-card p{font-size:12px;color:var(--text2)}
+
+/* WeChat Section */
+.wechat-preview{display:grid;grid-template-columns:300px 1fr;gap:24px;margin-top:48px}
+.wechat-contacts{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.wechat-contacts-header{padding:16px;border-bottom:1px solid var(--border);font-size:14px;font-weight:600}
+.wechat-contact{padding:12px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:var(--transition);border-bottom:1px solid var(--border)}
+.wechat-contact:last-child{border:none}
+.wechat-contact:hover{background:var(--bg3)}
+.wechat-contact.active{background:rgba(124,92,252,0.08);border-left:3px solid var(--accent)}
+.wechat-contact-avatar{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#fff}
+.wechat-contact-info{flex:1}
+.wechat-contact-name{font-size:13px;font-weight:600}
+.wechat-contact-msg{font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wechat-chat{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.wechat-chat-header{padding:14px 16px;border-bottom:1px solid var(--border);font-size:14px;font-weight:600;display:flex;align-items:center;gap:10px}
+.wechat-chat-body{flex:1;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:300px;overflow-y:auto}
+.wechat-msg{max-width:75%;padding:10px 14px;border-radius:10px;font-size:13px;line-height:1.5;animation:msgIn 0.4s cubic-bezier(0.16,1,0.3,1) both}
+.wechat-msg.incoming{background:var(--bg3);align-self:flex-start;border:1px solid var(--border)}
+.wechat-msg.outgoing{background:rgba(124,92,252,0.15);align-self:flex-end;border:1px solid rgba(124,92,252,0.2)}
+.wechat-msg.ai-reply{background:rgba(52,211,153,0.1);align-self:flex-start;border:1px solid rgba(52,211,153,0.2)}
+.wechat-msg .label{font-size:10px;font-weight:600;text-transform:uppercase;margin-bottom:4px;opacity:0.6}
+.wechat-chat-input{display:flex;align-items:center;gap:8px;padding:12px 16px;border-top:1px solid var(--border);background:var(--bg2)}
+.wechat-chat-input input{flex:1;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:13px;outline:none}
+.wechat-chat-input input:focus{border-color:var(--accent)}
+
+/* Plugin Grid */
+.plugins-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:48px}
+.plugin-item{padding:20px 12px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center;transition:var(--transition);cursor:default}
+.plugin-item:hover{background:var(--card-hover);border-color:rgba(124,92,252,0.2);transform:translateY(-2px)}
+.plugin-item-icon{font-size:24px;margin-bottom:8px}
+.plugin-item h5{font-size:12px;font-weight:600}
+.plugin-item .cat{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* Pet Section */
+.pet-showcase{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;margin-top:48px}
+.pet-visual{display:flex;flex-direction:column;align-items:center;gap:20px}
+.pet-screen{width:280px;height:200px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.pet-screen .pet-art{margin-bottom:8px}
+.pet-bubble{position:absolute;top:20px;right:20px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:8px 14px;font-size:12px;color:var(--text);animation:bubblePop 3s ease-in-out infinite}
+@keyframes bubblePop{0%,100%{opacity:0;transform:translateY(8px) scale(0.9)}15%,85%{opacity:1;transform:translateY(0) scale(1)}}
+.pet-states{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.pet-state{padding:8px 14px;border-radius:8px;font-size:12px;background:var(--card);border:1px solid var(--border);color:var(--text2);transition:var(--transition);cursor:default}
+.pet-state:hover{background:var(--card-hover);border-color:var(--accent);color:var(--text)}
+.pet-state.active{background:rgba(124,92,252,0.12);border-color:var(--accent);color:var(--accent2)}
+.pet-features{display:flex;flex-direction:column;gap:12px}
+.pet-feature{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);transition:var(--transition)}
+.pet-feature:hover{background:var(--card-hover);border-color:rgba(124,92,252,0.2)}
+.pet-feature-icon{font-size:20px;width:36px;text-align:center}
+
+/* Advantages */
+.advantages{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:48px}
+.advantage-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:36px;position:relative;overflow:hidden;transition:var(--transition)}
+.advantage-card:hover{border-color:rgba(124,92,252,0.3);transform:translateY(-2px);box-shadow:0 8px 40px rgba(0,0,0,0.3)}
+.advantage-num{font-size:48px;font-weight:800;color:rgba(124,92,252,0.08);position:absolute;top:16px;right:20px;line-height:1;user-select:none}
+.advantage-card h3{font-size:18px;font-weight:700;margin-bottom:10px}
+.advantage-card p{font-size:14px;color:var(--text2);line-height:1.7}
+.advantage-card .icon{font-size:28px;margin-bottom:12px}
+
+/* Footer */
+footer{position:relative;z-index:1;padding:48px 24px;text-align:center;border-top:1px solid var(--border);color:var(--text3);font-size:13px}
+footer a{color:var(--accent2);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer .footer-links{display:flex;gap:24px;justify-content:center;margin-top:12px}
+
+/* Scroll animations */
+.reveal{opacity:0;transform:translateY(40px);transition:all 0.8s cubic-bezier(0.16,1,0.3,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.reveal-delay-1{transition-delay:0.1s}
+.reveal-delay-2{transition-delay:0.2s}
+.reveal-delay-3{transition-delay:0.3s}
+.reveal-delay-4{transition-delay:0.4s}
+.reveal-delay-5{transition-delay:0.5s}
+
+/* Responsive */
+@media(max-width:968px){
+  .hero-grid,.compuse-grid,.pet-showcase{grid-template-columns:1fr}
+  .features-grid{grid-template-columns:1fr 1fr}
+  .features-grid-alt{grid-template-columns:1fr}
+  .office-cards{grid-template-columns:repeat(2,1fr)}
+  .plugins-grid{grid-template-columns:repeat(3,1fr)}
+  .wechat-preview{grid-template-columns:1fr}
+  .advantages{grid-template-columns:1fr}
+  .stats-bar{grid-template-columns:repeat(2,1fr);gap:16px}
+  .nav-links{display:none}
+  #hero{min-height:auto;padding:120px 24px 60px}
+}
+@media(max-width:600px){
+  .features-grid{grid-template-columns:1fr}
+  .office-cards{grid-template-columns:1fr 1fr}
+  .plugins-grid{grid-template-columns:repeat(2,1fr)}
+  section{padding:60px 16px}
+}
+
+/* Typing cursor blink */
+.typing-cursor::after{content:'|';animation:blink 1s step-end infinite;color:var(--accent);font-weight:300}
+@keyframes blink{50%{opacity:0}}
+
+/* Glow pulse for active elements */
+.glow-pulse{animation:glowPulse 2s ease-in-out infinite}
+@keyframes glowPulse{0%,100%{box-shadow:0 0 20px var(--accent-glow)}50%{box-shadow:0 0 40px var(--accent-glow)}}
+
+/* Section divider */
+.section-divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);max-width:800px;margin:0 auto;position:relative;z-index:1}
+
+/* Badge animation */
+.badge-pulse{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(124,92,252,0.1);color:var(--accent2);border:1px solid rgba(124,92,252,0.15);position:relative}
+.badge-pulse::before{content:'';width:6px;height:6px;border-radius:50%;background:#34d399;animation:pulse-dot 2s ease-in-out infinite}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* Glow text */
+.glow-text{text-shadow:0 0 40px rgba(124,92,252,0.3)}
+
+/* Marquee-like plugin row */
+.plugin-marquee-wrapper{overflow:hidden;margin-top:40px;mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
+.plugin-marquee{display:flex;gap:16px;animation:marquee 30s linear infinite;width:max-content}
+.plugin-marquee:hover{animation-play-state:paused}
+@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.plugin-marquee-item{padding:10px 18px;border-radius:10px;background:var(--card);border:1px solid var(--border);white-space:nowrap;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;transition:var(--transition)}
+.plugin-marquee-item:hover{background:var(--card-hover);border-color:var(--accent);transform:translateY(-1px)}
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<nav>
+  <a href="#" class="nav-logo"><span class="dot">Z</span>ZXDex</a>
+  <ul class="nav-links">
+    <li><a href="#features" class="active">功能</a></li>
+    <li><a href="#chat">AI 对话</a></li>
+    <li><a href="#computer-use">电脑操控</a></li>
+    <li><a href="#office">办公套件</a></li>
+    <li><a href="#wechat">微信集成</a></li>
+    <li><a href="#pet">桌面宠物</a></li>
+    <li><a href="#advantages">优势</a></li>
+  </ul>
+  <a href="#features" class="nav-cta">探索功能 →</a>
+</nav>
+
+<!-- Hero -->
+<section id="hero">
+  <div class="section-inner">
+    <div class="hero-grid">
+      <div>
+        <div class="badge-pulse" style="margin-bottom:20px">v0.1.0 · AI Desktop Agent</div>
+        <h1 class="hero-title glow-text">你的像素小狗<br><span>全能办公助手</span></h1>
+        <p class="hero-desc">ZXDex 将 AI 对话、电脑操控、办公文档生成、微信集成和可爱桌面宠物融为一体——一切尽在桌面本地运行。</p>
+        <div class="hero-btns">
+          <a href="#features" class="btn-primary">✨ 探索功能</a>
+          <a href="#advantages" class="btn-secondary">⚡ 核心优势</a>
+        </div>
+      </div>
+      <div class="hero-art">
+        <div class="pixel-dog-container">
+          <div class="pixel-ring"></div>
+          <div class="pixel-ring"></div>
+          <div class="pixel-ring"></div>
+          <div class="pixel-dog">
+            <!-- 16x16 pixel art dog (yellow) -->
+            <div class="pixel-art">
+              <div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-b"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-n"></div><div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-b"></div><div class="p p-w"></div><div class="p p-b"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-b"></div><div class="p p-w"></div><div class="p p-w"></div><div class="p p-b"></div>
+              <div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-b"></div><div class="p p-w"></div><div class="p p-w"></div><div class="p p-b"></div>
+              <div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-w"></div><div class="p p-w"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-b"></div><div class="p p-b"></div><div class="p p-n"></div>
+              <div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-w"></div><div class="p p-w"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-n"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-g"></div><div class="p p-g"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-g"></div><div class="p p-g"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="stats-bar">
+      <div class="stat-item"><div class="stat-num" data-count="14">14</div><div class="stat-label">AI 工具能力</div></div>
+      <div class="stat-item"><div class="stat-num" data-count="15">15</div><div class="stat-label">内置插件</div></div>
+      <div class="stat-item"><div class="stat-num" data-count="7">7</div><div class="stat-label">办公工具</div></div>
+      <div class="stat-item"><div class="stat-num" data-count="3">3</div><div class="stat-label">AI 服务商</div></div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Features -->
+<section id="features">
+  <div class="section-inner">
+    <div class="reveal"><div class="section-label">🚀 All-in-One</div></div>
+    <h2 class="section-title reveal reveal-delay-1">一切能力，一个桌面</h2>
+    <p class="section-sub reveal reveal-delay-2">从 AI 对话到电脑操控，从办公文档到微信自动回复——ZXDex 是你桌面上的全能 AI 工作台。</p>
+    <div class="features-grid">
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon">💬</div>
+        <h3>AI 智能对话</h3>
+        <p>多模型支持，流式输出，Markdown 渲染，代码高亮，LaTeX 公式 —— 专业的 AI 对话体验。</p>
+        <div class="feature-tags"><span class="feature-tag">DeepSeek</span><span class="feature-tag">OpenAI</span><span class="feature-tag">自定义</span></div>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon">🖥️</div>
+        <h3>Computer Use</h3>
+        <p>通过 MaaMCP 协议操控电脑：截图、OCR 识别、点击、输入、滚动——AI 替你操作桌面。</p>
+        <div class="feature-tags"><span class="feature-tag">MaaFramework</span><span class="feature-tag">MCP</span></div>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-icon">📄</div>
+        <h3>办公文档生成</h3>
+        <p>PPT、Word、Excel、图表、思维导图、PDF——一句描述即可生成专业办公文档。</p>
+        <div class="feature-tags"><span class="feature-tag">本地生成</span><span class="feature-tag">无需云端</span></div>
+      </div>
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon">💚</div>
+        <h3>微信 ClawBot</h3>
+        <p>扫码登录微信，AI 自动回复消息，多账号管理——让 AI 帮你处理微信沟通。</p>
+        <div class="feature-tags"><span class="feature-tag">腾讯 iLink</span><span class="feature-tag">自动回复</span></div>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon">🐕</div>
+        <h3>像素桌面宠物</h3>
+        <p>一只可爱的小黄狗陪伴你工作，10+ 种动画状态，对话气泡，粒子特效——AI 操作的视觉反馈。</p>
+        <div class="feature-tags"><span class="feature-tag">始终置顶</span><span class="feature-tag">可拖动</span></div>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-icon">🧩</div>
+        <h3>15 款内置插件</h3>
+        <p>邮件助手、番茄钟、RSS、日程管理、API 调试、二维码工具……应有尽有。</p>
+        <div class="feature-tags"><span class="feature-tag">可开关</span><span class="feature-tag">持续扩展</span></div>
+      </div>
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon">🔍</div>
+        <h3>联网搜索</h3>
+        <p>DuckDuckGo + Bing 双源搜索，网页内容抓取 + AI 摘要——信息就在指尖。</p>
+        <div class="feature-tags"><span class="feature-tag">DuckDuckGo</span><span class="feature-tag">Bing</span></div>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon">📁</div>
+        <h3>工作区管理</h3>
+        <p>文件树浏览、创建/读取文件、代码生成——AI 可直接操作你的工作区文件。</p>
+        <div class="feature-tags"><span class="feature-tag">本地文件</span><span class="feature-tag">代码生成</span></div>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-icon">🧠</div>
+        <h3>自进化系统</h3>
+        <p>记录对话习惯、学习用户模式、积累模板——AI 越用越懂你。</p>
+        <div class="feature-tags"><span class="feature-tag">习惯学习</span><span class="feature-tag">模板积累</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Chat Demo -->
+<section id="chat">
+  <div class="section-inner">
+    <div class="reveal"><div class="section-label">💬 商业级 AI 对话界面</div></div>
+    <h2 class="section-title reveal reveal-delay-1">豆包级体验，<br>本地化部署</h2>
+    <p class="section-sub reveal reveal-delay-2">媲美豆包的流畅对话体验，多模型自由切换，联网搜索与工具调用无缝融合。</p>
+    <div class="chat-demo reveal reveal-delay-3">
+      <div class="chat-demo-header">
+        <div class="chat-demo-header-left">
+          <div class="chat-demo-avatar">Z</div>
+          <div>
+            <h4>ZXDex AI · <span class="typing-cursor">深度思考模式</span></h4>
+            <span>oc/deepseek-v4-flash-free</span>
+          </div>
+        </div>
+        <div class="chat-demo-badges">
+          <span class="chat-demo-badge search">🌐 联网搜索</span>
+          <span class="chat-demo-badge tools">🔧 工具调用</span>
+        </div>
+      </div>
+      <div class="chat-demo-body" id="chatBody">
+        <!-- Messages injected by JS -->
+      </div>
+      <div class="chat-demo-input">
+        <div class="tool-row">
+          <button class="tool-btn-demo">🔍 搜索</button>
+          <button class="tool-btn-demo">📝 写作</button>
+          <button class="tool-btn-demo">📊 表格</button>
+          <button class="tool-btn-demo">📽️ PPT</button>
+        </div>
+      </div>
+      <div class="chat-demo-input" style="border-top:none;padding-top:0">
+        <input type="text" placeholder="输入消息，Enter 发送……" id="chatInput" readonly>
+        <button id="chatSendBtn" disabled>➤</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Computer Use -->
+<section id="computer-use">
+  <div class="section-inner">
+    <div class="reveal"><div class="section-label">🖥️ Computer Use</div></div>
+    <h2 class="section-title reveal reveal-delay-1">AI 替你操控电脑</h2>
+    <p class="section-sub reveal reveal-delay-2">通过 MaaFramework MCP 协议，AI 可以看屏幕、点按钮、打字、滚动——像人一样操作你的电脑。</p>
+    <div class="compuse-grid">
+      <div>
+        <div class="compuse-screen reveal reveal-delay-1">
+          <div class="compuse-screen-inner">
+            <div class="compuse-window-bar">
+              <div class="compuse-dot r"></div>
+              <div class="compuse-dot y"></div>
+              <div class="compuse-dot g"></div>
+            </div>
+            <div class="compuse-desktop">
+              <div class="compuse-desktop-icons">
+                <div class="compuse-icon"><div class="compuse-icon-folder">📁</div><span>项目</span></div>
+                <div class="compuse-icon"><div class="compuse-icon-folder">📄</div><span>文档</span></div>
+                <div class="compuse-icon"><div class="compuse-icon-folder">⚙️</div><span>设置</span></div>
+              </div>
+              <svg class="compuse-cursor" viewBox="0 0 16 20" fill="none"><path d="M1 1L12 12H7.5L6 16L4 12H1Z" fill="white" stroke="white" stroke-width="1.5"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="compuse-log reveal reveal-delay-2">
+          <div class="compuse-log-line"><span class="compuse-log-time">[10:23:45]</span><span class="compuse-log-msg info">⟐ 窗口扫描完成 · 3个可用窗口</span></div>
+          <div class="compuse-log-line"><span class="compuse-log-time">[10:23:47]</span><span class="compuse-log-msg info">⟐ 已连接: 微信</span></div>
+          <div class="compuse-log-line"><span class="compuse-log-time">[10:23:50]</span><span class="compuse-log-msg ok">✓ 截图成功 (1920×1080)</span></div>
+          <div class="compuse-log-line"><span class="compuse-log-time">[10:23:52]</span><span class="compuse-log-msg ok">✓ OCR 识别: 12个文本区域</span></div>
+          <div class="compuse-log-line"><span class="compuse-log-time">[10:23:55]</span><span class="compuse-log-msg ok">✓ 点击 (856, 423)</span></div>
+          <div class="compuse-log-line"><span class="compuse-log-time">[10:23:58]</span><span class="compuse-log-msg ok">✓ 输入文本: "你好，我是 AI 助手"</span></div>
+        </div>
+      </div>
+      <div class="compuse-tools reveal reveal-delay-3">
+        <div class="compuse-tool">
+          <div class="compuse-tool-icon">📸</div>
+          <div class="compuse-tool-info"><h4>截图+OCR</h4><p>截取屏幕并识别文字内容</p></div>
+        </div>
+        <div class="compuse-tool">
+          <div class="compuse-tool-icon">🖱️</div>
+          <div class="compuse-tool-info"><h4>鼠标点击</h4><p>精确坐标点击，支持双击/长按</p></div>
+        </div>
+        <div class="compuse-tool">
+          <div class="compuse-tool-icon">⌨️</div>
+          <div class="compuse-tool-info"><h4>键盘输入</h4><p>文本输入、快捷键、虚拟按键</p></div>
+        </div>
+        <div class="compuse-tool">
+          <div class="compuse-tool-icon">📜</div>
+          <div class="compuse-tool-info"><h4>滚动控制</h4><p>页面滚动，浏览长文档/网页</p></div>
+        </div>
+        <div class="compuse-tool">
+          <div class="compuse-tool-icon">🔗</div>
+          <div class="compuse-tool-info"><h4>窗口管理</h4><p>扫描窗口、连接指定应用</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Office -->
+<section id="office">
+  <div class="section-inner">
+    <div class="reveal"><div class="section-label">📄 办公套件</div></div>
+    <h2 class="section-title reveal reveal-delay-1">一句话生成<br>专业文档</h2>
+    <p class="section-sub reveal reveal-delay-2">PPT、Word、Excel、图表、思维导图……全部在本地生成，无需云端服务，数据安全无忧。</p>
+    <div class="office-cards">
+      <div class="office-card reveal reveal-delay-1">
+        <div class="office-card-icon">📽️</div>
+        <h4>PPT 生成</h4>
+        <p>AI 生成专业演示文稿</p>
+      </div>
+      <div class="office-card reveal reveal-delay-2">
+        <div class="office-card-icon">📊</div>
+        <h4>Excel 表格</h4>
+        <p>数据表格自动生成</p>
+      </div>
+      <div class="office-card reveal reveal-delay-3">
+        <div class="office-card-icon">📝</div>
+        <h4>Word 文档</h4>
+        <p>报告/公文一键生成</p>
+      </div>
+      <div class="office-card reveal reveal-delay-4">
+        <div class="office-card-icon">📄</div>
+        <h4>PDF 处理</h4>
+        <p>合并/提取/水印</p>
+      </div>
+      <div class="office-card reveal reveal-delay-1">
+        <div class="office-card-icon">📈</div>
+        <h4>图表生成</h4>
+        <p>ECharts 可视化图表</p>
+      </div>
+      <div class="office-card reveal reveal-delay-2">
+        <div class="office-card-icon">🧠</div>
+        <h4>思维导图</h4>
+        <p>结构化思维梳理</p>
+      </div>
+      <div class="office-card reveal reveal-delay-3">
+        <div class="office-card-icon">🌐</div>
+        <h4>翻译工具</h4>
+        <p>多语言文本翻译</p>
+      </div>
+      <div class="office-card reveal reveal-delay-4">
+        <div class="office-card-icon">💻</div>
+        <h4>代码生成</h4>
+        <p>多语言代码自动生成</p>
+      </div>
+    </div>
+    <div class="chat-demo reveal" style="margin-top:32px">
+      <div class="chat-demo-header">
+        <div class="chat-demo-header-left">
+          <div class="chat-demo-avatar" style="background:linear-gradient(135deg,#ef4444,#dc2626)">📽</div>
+          <div><h4>演示文稿生成</h4><span>pptxgenjs · 本地渲染</span></div>
+        </div>
+      </div>
+      <div class="chat-demo-body" style="max-height:200px">
+        <div class="msg ai" style="animation-delay:0.1s">
+          <div class="msg-avatar ai">Z</div>
+          <div class="msg-bubble">
+            <strong>已生成演示文稿：</strong>「2025年度产品战略规划」<br>
+            <span style="font-size:12px;color:var(--text2)">12页 · 现代商务风格 · 数据图表已嵌入</span>
+            <div class="tool-result">✓ 文件已保存至 workspace/output/产品战略规划.pptx</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- WeChat -->
+<section id="wechat">
+  <div class="section-inner">
+    <div class="reveal"><div class="section-label">💚 微信集成</div></div>
+    <h2 class="section-title reveal reveal-delay-1">AI 接管你的<br>微信消息</h2>
+    <p class="section-sub reveal reveal-delay-2">基于腾讯 iLink 协议的微信 ClawBot 集成，多账号管理，AI 自动回复，让微信沟通更高效。</p>
+    <div class="wechat-preview">
+      <div class="wechat-contacts reveal reveal-delay-1">
+        <div class="wechat-contacts-header">💬 消息列表</div>
+        <div class="wechat-contact active">
+          <div class="wechat-contact-avatar" style="background:linear-gradient(135deg,#7c5cfc,#4f46e5)">小</div>
+          <div class="wechat-contact-info">
+            <div class="wechat-contact-name">小明</div>
+            <div class="wechat-contact-msg">好的，那就这么定了！</div>
+          </div>
+        </div>
+        <div class="wechat-contact">
+          <div class="wechat-contact-avatar" style="background:linear-gradient(135deg,#34d399,#059669)">团</div>
+          <div class="wechat-contact-info">
+            <div class="wechat-contact-name">项目群</div>
+            <div class="wechat-contact-msg">@所有人 下午3点开会</div>
+          </div>
+        </div>
+        <div class="wechat-contact">
+          <div class="wechat-contact-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706)">李</div>
+          <div class="wechat-contact-info">
+            <div class="wechat-contact-name">李总</div>
+            <div class="wechat-contact-msg">方案再改一版发我</div>
+          </div>
+        </div>
+        <div class="wechat-contact">
+          <div class="wechat-contact-avatar" style="background:linear-gradient(135deg,#ef4444,#dc2626)">客</div>
+          <div class="wechat-contact-info">
+            <div class="wechat-contact-name">客户支持</div>
+            <div class="wechat-contact-msg">请问退款什么时候到账？</div>
+          </div>
+        </div>
+      </div>
+      <div class="wechat-chat reveal reveal-delay-2">
+        <div class="wechat-chat-header">
+          <div class="wechat-contact-avatar" style="width:28px;height:28px;background:linear-gradient(135deg,#7c5cfc,#4f46e5);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff">小</div>
+          小明
+          <span style="font-size:11px;color:var(--text2);margin-left:auto">🤖 AI 自动回复</span>
+        </div>
+        <div class="wechat-chat-body">
+          <div class="wechat-msg incoming">你好，在吗？想咨询一下产品报价</div>
+          <div class="wechat-msg outgoing"><div class="label">📤 你</div>在的，您想了解哪款产品？</div>
+          <div class="wechat-msg incoming">请问 A 系列 Pro 版多少钱？</div>
+          <div class="wechat-msg ai-reply"><div class="label">🤖 AI · 自动回复</div>您好！A 系列 Pro 版目前标准配置售价为 ¥2,999，包含一年质保。如需批量采购或定制配置，可以告诉我具体需求，我帮您查询报价 😊</div>
+          <div class="wechat-msg incoming">好的，那我先考虑一下</div>
+          <div class="wechat-msg ai-reply"><div class="label">🤖 AI · 自动回复</div>没问题，您可以随时找我咨询。如果需要产品资料，我也可以发给您参考~</div>
+          <div class="wechat-msg incoming">好的，那就先这样</div>
+          <div class="wechat-msg ai-reply"><div class="label">🤖 AI · 自动回复</div>好的，有需要随时找我，祝您生活愉快！😊</div>
+        </div>
+        <div class="wechat-chat-input">
+          <input type="text" placeholder="输入消息……" readonly>
+          <span style="font-size:12px;color:var(--text3)">🤖 AI 自动回复已开启</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Pet -->
+<section id="pet">
+  <div class="section-inner">
+    <div class="reveal"><div class="section-label">🐕 桌面宠物</div></div>
+    <h2 class="section-title reveal reveal-delay-1">你的像素小狗<br>办公搭子</h2>
+    <p class="section-sub reveal reveal-delay-2">一只可爱的小黄狗陪伴你工作，10+ 种动画状态，对 AI 操作做出实时视觉反馈。</p>
+    <div class="pet-showcase">
+      <div class="pet-visual">
+        <div class="pet-screen reveal reveal-delay-2">
+          <div class="pet-art">
+            <div class="pixel-art" style="grid-template-columns:repeat(12,10px);grid-template-rows:repeat(12,10px)">
+              <div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-n"></div><div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-b"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-b"></div><div class="p p-w"></div><div class="p p-b"></div>
+              <div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-b"></div><div class="p p-w"></div><div class="p p-b"></div>
+              <div class="p p-d"></div><div class="p p-y"></div><div class="p p-w"></div><div class="p p-w"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-b"></div><div class="p p-n"></div>
+              <div class="p p-d"></div><div class="p p-y"></div><div class="p p-w"></div><div class="p p-w"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-n"></div><div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-n"></div><div class="p p-d"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-y"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div>
+              <div class="p p-n"></div><div class="p p-n"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-d"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div><div class="p p-n"></div>
+            </div>
+          </div>
+          <div class="pet-bubble">主人，需要我帮忙吗？🐾</div>
+        </div>
+        <div class="pet-states">
+          <span class="pet-state active">😴 idle</span>
+          <span class="pet-state">👀 blink</span>
+          <span class="pet-state">🏃 run</span>
+          <span class="pet-state">⬆️ jump</span>
+          <span class="pet-state">⌨️ type</span>
+          <span class="pet-state">🎉 celebrate</span>
+          <span class="pet-state">💤 sleep</span>
+          <span class="pet-state">🤔 thinking</span>
+        </div>
+      </div>
+      <div class="pet-features reveal reveal-delay-3">
+        <div class="pet-feature"><span class="pet-feature-icon">🖼️</span>始终置顶显示，不干扰工作</div>
+        <div class="pet-feature"><span class="pet-feature-icon">🖱️</span>可拖拽移动，任意位置放置</div>
+        <div class="pet-feature"><span class="pet-feature-icon">🎭</span>10+ 动画状态实时切换</div>
+        <div class="pet-feature"><span class="pet-feature-icon">💬</span>对话气泡展示 AI 操作反馈</div>
+        <div class="pet-feature"><span class="pet-feature-icon">✨</span>粒子特效庆祝动画</div>
+        <div class="pet-feature"><span class="pet-feature-icon">🔄</span>状态联动 AI 操作：点击→tap、输入→type、搜索→thinking</div>
+        <div class="pet-feature"><span class="pet-feature-icon">🎯</span>成功→celebrate 粒子烟花</div>
+        <div class="pet-feature"><span class="pet-feature-icon">❤️</span>心跳提醒配合宠物互动</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Plugin Marquee -->
+<section>
+  <div class="section-inner">
+    <div class="reveal"><div class="section-label">🧩 插件生态</div></div>
+    <h2 class="section-title reveal reveal-delay-1">15 款内置插件<br>即开即用</h2>
+    <p class="section-sub reveal reveal-delay-2">涵盖沟通、效率、工具、开发、设计五大类别，每个插件可独立开关。</p>
+    <div class="plugin-marquee-wrapper reveal">
+      <div class="plugin-marquee">
+        <div class="plugin-marquee-item">📧 邮件助手</div>
+        <div class="plugin-marquee-item">📝 会议纪要</div>
+        <div class="plugin-marquee-item">📡 RSS 订阅</div>
+        <div class="plugin-marquee-item">📅 日程管理</div>
+        <div class="plugin-marquee-item">🍅 番茄钟</div>
+        <div class="plugin-marquee-item">📁 文件整理</div>
+        <div class="plugin-marquee-item">📱 二维码工具</div>
+        <div class="plugin-marquee-item">🔧 API 调试</div>
+        <div class="plugin-marquee-item">💻 代码片段</div>
+        <div class="plugin-marquee-item">🖼️ 图片处理</div>
+        <div class="plugin-marquee-item">📝 速记便签</div>
+        <div class="plugin-marquee-item">📋 日报周报</div>
+        <div class="plugin-marquee-item">🎨 颜色提取</div>
+        <div class="plugin-marquee-item">🕸️ 网页抓取</div>
+        <div class="plugin-marquee-item">📋 表单填写</div>
+        <!-- Duplicate for seamless loop -->
+        <div class="plugin-marquee-item">📧 邮件助手</div>
+        <div class="plugin-marquee-item">📝 会议纪要</div>
+        <div class="plugin-marquee-item">📡 RSS 订阅</div>
+        <div class="plugin-marquee-item">📅 日程管理</div>
+        <div class="plugin-marquee-item">🍅 番茄钟</div>
+        <div class="plugin-marquee-item">📁 文件整理</div>
+        <div class="plugin-marquee-item">📱 二维码工具</div>
+        <div class="plugin-marquee-item">🔧 API 调试</div>
+        <div class="plugin-marquee-item">💻 代码片段</div>
+        <div class="plugin-marquee-item">🖼️ 图片处理</div>
+        <div class="plugin-marquee-item">📝 速记便签</div>
+        <div class="plugin-marquee-item">📋 日报周报</div>
+        <div class="plugin-marquee-item">🎨 颜色提取</div>
+        <div class="plugin-marquee-item">🕸️ 网页抓取</div>
+        <div class="plugin-marquee-item">📋 表单填写</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- Advantages -->
+<section id="advantages">
+  <div class="section-inner">
+    <div class="reveal"><div class="section-label">⚡ 核心优势</div></div>
+    <h2 class="section-title reveal reveal-delay-1">为什么选择 ZXDex</h2>
+    <p class="section-sub reveal reveal-delay-2">与豆包等商业 AI 产品相比，ZXDex 拥有独特的本地化、自动化与个性化优势。</p>
+    <div class="advantages">
+      <div class="advantage-card reveal reveal-delay-1">
+        <div class="advantage-num">01</div>
+        <div class="icon">🖥️</div>
+        <h3>Computer Use 桌面操控</h3>
+        <p>豆包无法做到的——ZXDex 可以直接看你的屏幕、点击按钮、输入文字、滚动页面。真正的 AI 桌面代理，不止于聊天。</p>
+      </div>
+      <div class="advantage-card reveal reveal-delay-2">
+        <div class="advantage-num">02</div>
+        <div class="icon">💚</div>
+        <h3>微信 ClawBot 深度集成</h3>
+        <p>豆包没有的——ZXDex 直接接入微信，AI 自动回复消息、管理多账号。办公沟通效率翻倍。</p>
+      </div>
+      <div class="advantage-card reveal reveal-delay-3">
+        <div class="advantage-num">03</div>
+        <div class="icon">🐕</div>
+        <h3>像素宠物桌面陪伴</h3>
+        <p>豆包没有的——一只会动的小黄狗陪你工作，AI 操作时有视觉反馈，让工具变得有温度。</p>
+      </div>
+      <div class="advantage-card reveal reveal-delay-4">
+        <div class="advantage-num">04</div>
+        <div class="icon">📄</div>
+        <h3>本地办公文档生成</h3>
+        <p>PPT、Word、Excel、图表全部在客户端生成，无需上传数据到云端。数据安全，隐私可控。</p>
+      </div>
+      <div class="advantage-card reveal reveal-delay-1">
+        <div class="advantage-num">05</div>
+        <div class="icon">🔌</div>
+        <h3>多模型自由切换</h3>
+        <p>不绑定任何厂商。DeepSeek、OpenAI、自定义——任意 OpenAI 兼容 API 即插即用，包括豆包火山引擎。</p>
+      </div>
+      <div class="advantage-card reveal reveal-delay-2">
+        <div class="advantage-num">06</div>
+        <div class="icon">🧩</div>
+        <h3>15 插件 + 自进化</h3>
+        <p>内置 15 款功能插件，覆盖办公、开发、效率全场景。自进化系统让 AI 越用越懂你。</p>
+      </div>
+      <div class="advantage-card reveal reveal-delay-3">
+        <div class="advantage-num">07</div>
+        <div class="icon">❤️</div>
+        <h3>主动心跳引擎</h3>
+        <p>豆包只能等你去问——ZXDex 会主动问候、健康提醒、推送资讯简报。AI 从被动变主动。</p>
+      </div>
+      <div class="advantage-card reveal reveal-delay-4">
+        <div class="advantage-num">08</div>
+        <div class="icon">🔒</div>
+        <h3>本地优先 · 隐私安全</h3>
+        <p>所有对话、设置、配置本地存储，无远程遥测。仅在与 AI 对话时发送 API 请求，数据主权在握。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div>ZXDex <span style="color:var(--accent2)">v0.1.0</span> — AI Desktop Agent with Computer Use</div>
+  <div style="margin-top:8px;color:var(--text2);font-size:12px">由 <span style="color:var(--accent2)">@Nefert</span> 设计 · <span style="color:var(--accent2)">@Nerfert</span> 开发</div>
+  <div class="footer-links">
+    <a href="https://github.com/zouyuxuan122" target="_blank">GitHub</a>
+    <a href="#features">功能</a>
+    <a href="#advantages">优势</a>
+  </div>
+</footer>
+
+<script>
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// Chat demo auto-typing
+const chatBody = document.getElementById('chatBody');
+const messages = [
+  { type: 'user', text: '帮我查一下最近 AI 行业有什么新闻' },
+  { type: 'ai', text: '好的，我来搜索一下最新信息。', tool: '🔍 web_search("AI 行业 2025 最新动态")' },
+  { type: 'ai', text: '以下是 2025 年 AI 行业最新动态：\n\n1. **OpenAI 发布 GPT-5** — 推理能力大幅提升，支持多模态实时交互\n2. **DeepSeek R2 即将发布** — 据传性能对标 GPT-5，开源模型生态繁荣\n3. **AI Agent 爆发** — Anthropic Computer Use 引领桌面 AI 代理浪潮\n\n需要我进一步展开某个话题吗？' },
+  { type: 'user', text: '帮我做一份关于 AI Agent 趋势的 PPT' },
+  { type: 'ai', text: '好的，我生成了演示文稿：**「2025 AI Agent 发展趋势」**', tool: '📄 generate_file("AI_Agent_趋势.pptx", "演示文稿")', result: '✓ 文件已保存至工作区 output/' },
+];
+
+let msgIdx = 0;
+function addMessage(msg) {
+  const div = document.createElement('div');
+  div.className = `msg ${msg.type}`;
+  div.innerHTML = `<div class="msg-avatar ${msg.type}">${msg.type === 'ai' ? 'Z' : 'U'}</div><div class="msg-bubble">${msg.text.replace(/\n/g, '<br>')}${msg.tool ? `<div class="tool-call">${msg.tool}</div>` : ''}${msg.result ? `<div class="tool-result">${msg.result}</div>` : ''}</div>`;
+  chatBody.appendChild(div);
+  chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+// Initial messages with delay
+function playChatDemo() {
+  msgIdx = 0;
+  chatBody.innerHTML = '';
+  addMessage(messages[0]);
+  let i = 1;
+  function next() {
+    if (i < messages.length) {
+      addMessage(messages[i]);
+      i++;
+      setTimeout(next, 1800 + Math.random() * 1200);
+    } else {
+      setTimeout(() => {
+        const dummyInput = document.getElementById('chatInput');
+        dummyInput.value = '';
+        dummyInput.placeholder = '输入消息，Enter 发送……';
+      }, 1000);
+    }
+  }
+  setTimeout(next, 1500);
+}
+
+playChatDemo();
+setInterval(playChatDemo, 22000);
+
+// Pet state hover
+document.querySelectorAll('.pet-state').forEach(el => {
+  el.addEventListener('click', function() {
+    document.querySelectorAll('.pet-state').forEach(e => e.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+// Nav scroll highlight
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    const top = s.offsetTop - 120;
+    if (window.scrollY >= top) current = s.getAttribute('id');
+  });
+  navLinks.forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+});
+</script>
+</body>
+</html>
